@@ -1,0 +1,32 @@
+# ── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── TypeScript ────────────────────────────────────────────────────────────────
+dist/
+*.tsbuildinfo
+
+# ── Playwright ───────────────────────────────────────────────────────────────
+playwright-report/
+test-results/
+*.xml
+test-results.json
+
+# ── Environnement ─────────────────────────────────────────────────────────────
+.env
+.env.browserstack
+.env.local
+.env.*.local
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Éditeurs ─────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo

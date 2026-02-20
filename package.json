@@ -1,0 +1,37 @@
+{
+  "name": "playwright-enterprise-kit",
+  "version": "1.0.0",
+  "description": "Framework Playwright enterprise-ready : Jira/Xray, BrowserStack, Confluence, GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "test:debug": "npx playwright test --debug",
+    "test:report": "npx playwright show-report",
+    "test:browserstack": "npx playwright test --config=playwright.config.browserstack.js",
+    "test:example": "npx playwright test tests/example/"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "e2e",
+    "automation",
+    "jira",
+    "xray",
+    "browserstack",
+    "enterprise",
+    "framework",
+    "template"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@estruyf/github-actions-reporter": "^1.11.0",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.0.0",
+    "@xray-app/playwright-junit-reporter": "^0.10.0",
+    "browserstack-local": "^1.5.8",
+    "typescript": "^5.0.0"
+  }
+}
