@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Supprime les propriétés test_key du rapport Xray JUnit XML
- * pour éviter les erreurs avec des tests non existants dans Jira
+ * Removes test_key properties from the Xray JUnit XML report
+ * to avoid errors with tests that do not yet exist in Jira
  * 
  * Usage: node scripts/remove-test-keys.js [input-file]
  * 
- * Par défaut: 
+ * Default:
  *   input-file = xray-report.xml
  */
 
@@ -23,19 +23,19 @@ if (!fs.existsSync(inputFile)) {
 
 let xml = fs.readFileSync(inputFile, 'utf-8');
 
-// Compter les occurrences avant suppression
+// Count occurrences before removal
 const beforeCount = (xml.match(/<property name="test_key"/g) || []).length;
 console.log(`   Found ${beforeCount} test_key properties`);
 
-// Supprimer toutes les lignes contenant <property name="test_key"
+// Remove all lines containing <property name="test_key"
 xml = xml.replace(/<property name="test_key"[^>]*>[\s\S]*?<\/property>\s*/g, '');
 
-// Compter après suppression
+// Count after removal
 const afterCount = (xml.match(/<property name="test_key"/g) || []).length;
 console.log(`   Removed ${beforeCount - afterCount} test_key properties`);
 console.log(`   Remaining: ${afterCount}`);
 
-// Écrire le fichier modifié
+// Write the modified file
 fs.writeFileSync(inputFile, xml, 'utf-8');
 
 console.log(`✅ Test keys removed successfully`);

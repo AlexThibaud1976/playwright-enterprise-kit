@@ -1,11 +1,11 @@
 /**
- * Playwright Enterprise Kit - Sélecteur de fixtures
+ * Playwright Enterprise Kit - Fixture selector
  *
- * Sélectionne automatiquement les fixtures en fonction de l'environnement :
- * - Si BROWSERSTACK_USERNAME et BROWSERSTACK_ACCESS_KEY sont définis → fixtures BrowserStack
- * - Sinon → fixtures Playwright standard
+ * Automatically selects fixtures based on the environment:
+ * - If BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY are defined → BrowserStack fixtures
+ * - Otherwise → standard Playwright fixtures
  *
- * Usage dans vos tests :
+ * Usage in your tests:
  *   const { test, expect } = require('../../test-fixtures');
  */
 

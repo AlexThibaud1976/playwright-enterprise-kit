@@ -1,27 +1,27 @@
 /**
- * Playwright Enterprise Kit - Exemple de test de login avec POM
+ * Playwright Enterprise Kit - Login test example with POM
  *
- * Démontre le pattern Page Object Model (POM) recommandé.
- * Adaptez les sélecteurs à votre application.
+ * Demonstrates the recommended Page Object Model (POM) pattern.
+ * Adapt the selectors to your application.
  *
- * Structure recommandée pour vos tests :
- *   - Chaque fichier = une fonctionnalité
- *   - Chaque test = un scénario indépendant
- *   - test.beforeEach pour les préconditions communes
- *   - test.afterEach pour le nettoyage
+ * Recommended structure for your tests:
+ *   - One file = one feature
+ *   - One test = one independent scenario
+ *   - test.beforeEach for common preconditions
+ *   - test.afterEach for cleanup
  */
 
 import { test, expect } from '@playwright/test';
 import { generateUserData, captureEvidence } from '../../utils/helpers';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// EXEMPLE DE PAGE OBJECT INLINE - À extraire dans pages/login.page.ts
+// INLINE PAGE OBJECT EXAMPLE - Extract to pages/login.page.ts
 // ──────────────────────────────────────────────────────────────────────────────
 
 class LoginPage {
   constructor(private page: import('@playwright/test').Page) {}
 
-  // Sélecteurs — adaptez à votre application
+  // Selectors — adapt to your application
   get emailInput() { return this.page.locator('input[name="email"], input[type="email"], #email'); }
   get passwordInput() { return this.page.locator('input[name="password"], input[type="password"], #password'); }
   get submitButton() { return this.page.locator('button[type="submit"], input[type="submit"]'); }
@@ -52,8 +52,8 @@ test.describe('Login', () => {
   });
 
   test('Login page renders correctly', async ({ page }, testInfo) => {
-    // Vérifier les éléments présents sur la page
-    // Décommentez les assertions correspondant à votre application
+    // Verify elements present on the page
+    // Uncomment the assertions that match your application
     //
     // await expect(loginPage.emailInput).toBeVisible();
     // await expect(loginPage.passwordInput).toBeVisible();
@@ -62,14 +62,14 @@ test.describe('Login', () => {
     // Capture d'evidence
     await captureEvidence(page, testInfo, 'login-page');
 
-    // Test placeholder : à remplacer par de vraies assertions
+    // Test placeholder: replace with real assertions
     expect(page.url()).toContain('login');
   });
 
   test('Login with valid credentials', async ({ page }, testInfo) => {
     // ────────────────────────────────────────────────────────────
-    // IMPORTANT : N'utilisez jamais de credentials réels ici.
-    // Utilisez des variables d'environnement :
+    // IMPORTANT: Never use real credentials here.
+    // Use environment variables instead:
     //   process.env.TEST_USER_EMAIL
     //   process.env.TEST_USER_PASSWORD
     // ────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ test.describe('Login', () => {
     await loginPage.login(email, password);
     await captureEvidence(page, testInfo, 'after-login');
 
-    // Vérifier la redirection après connexion
+    // Verify redirect after login
     // await expect(page).toHaveURL('/dashboard');
     // await expect(page.locator('h1')).toContainText('Welcome');
   });
@@ -88,7 +88,7 @@ test.describe('Login', () => {
     const { email } = generateUserData();
     await loginPage.login(email, 'wrong-password');
 
-    // Vérifier le message d'erreur
+    // Verify the error message
     // await expect(loginPage.errorMessage).toBeVisible();
     // await expect(loginPage.errorMessage).toContainText('Invalid');
 

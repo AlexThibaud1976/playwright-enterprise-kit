@@ -1,35 +1,35 @@
 #!/usr/bin/env node
 
 /**
- * Playwright Enterprise Kit - Mise à jour du rapport Confluence
+ * Playwright Enterprise Kit - Confluence report update
  *
- * Ajoute une ligne au tableau historique d'une page Confluence après chaque
- * exécution de tests. Crée la page si elle n'existe pas encore.
+ * Appends a row to the historical table of a Confluence page after each
+ * test run. Creates the page if it does not yet exist.
  *
- * Variables d'environnement requises :
- *   CONFLUENCE_URL          - URL de base Confluence (ex: https://yourco.atlassian.net/wiki)
- *   CONFLUENCE_USER         - Email de l'utilisateur Confluence
- *   CONFLUENCE_API_TOKEN    - Token API Atlassian
- *   CONFLUENCE_SPACE_KEY    - Clé de l'espace (ex: QA)
+ * Required environment variables:
+ *   CONFLUENCE_URL          - Base Confluence URL (e.g. https://yourco.atlassian.net/wiki)
+ *   CONFLUENCE_USER         - Confluence user email
+ *   CONFLUENCE_API_TOKEN    - Atlassian API token
+ *   CONFLUENCE_SPACE_KEY    - Space key (e.g. QA)
  *
- * Variables d'environnement optionnelles :
- *   CONFLUENCE_PAGE_TITLE   - Titre de la page (défaut: "Test Execution Dashboard")
- *   CONFLUENCE_PARENT_PAGE_ID - ID de la page parente
- *   JIRA_URL                - URL Jira (pour les liens vers les Test Executions)
- *   DEVICE_NAME             - Nom du device testé
- *   BS_OS, BS_OS_VERSION    - OS et version
- *   BS_BROWSER, BS_BROWSER_VERSION - Navigateur et version
+ * Optional environment variables:
+ *   CONFLUENCE_PAGE_TITLE   - Page title (default: "Test Execution Dashboard")
+ *   CONFLUENCE_PARENT_PAGE_ID - Parent page ID
+ *   JIRA_URL                - Jira URL (for links to Test Executions)
+ *   DEVICE_NAME             - Name of the tested device
+ *   BS_OS, BS_OS_VERSION    - OS and version
+ *   BS_BROWSER, BS_BROWSER_VERSION - Browser and version
  *
- * Arguments CLI (passés par le workflow GitHub Actions) :
- *   --exec-key <key>        - Clé Jira de la Test Execution
- *   --test-result <result>  - Résultat (PASS/FAIL/UNKNOWN)
- *   --test-scope <scope>    - Périmètre de test
- *   --run-number <n>        - Numéro du run GitHub Actions
- *   --run-id <id>           - ID du run GitHub Actions
- *   --repository <repo>     - Repo GitHub (owner/repo)
- *   --browserstack-url <u>  - URL du build BrowserStack (optionnel)
+ * CLI arguments (passed by the GitHub Actions workflow):
+ *   --exec-key <key>        - Jira Test Execution key
+ *   --test-result <result>  - Result (PASS/FAIL/UNKNOWN)
+ *   --test-scope <scope>    - Test scope
+ *   --run-number <n>        - GitHub Actions run number
+ *   --run-id <id>           - GitHub Actions run ID
+ *   --repository <repo>     - GitHub repo (owner/repo)
+ *   --browserstack-url <u>  - BrowserStack build URL (optional)
  *
- * Usage :
+ * Usage:
  *   node scripts/update-confluence-report.js \
  *     --exec-key "PROJ-123" \
  *     --test-result "PASS" \

@@ -1,13 +1,13 @@
 /**
- * Playwright Enterprise Kit - Fixtures BrowserStack
+ * Playwright Enterprise Kit - BrowserStack Fixtures
  *
- * Gère deux modes d'exécution :
- * - Mode local    : si aucun credential BrowserStack, on exécute en Chromium local.
- * - Mode BS       : une session BrowserStack est créée par test (desktop ou mobile).
+ * Handles two execution modes:
+ * - Local mode    : if no BrowserStack credentials are present, runs in local Chromium.
+ * - BS mode       : a BrowserStack session is created per test (desktop or mobile).
  *
- * Usage dans un test :
+ * Usage in a test:
  *   const { test, expect } = require('../fixtures/test-fixtures');
- *   // ou si vous importez directement depuis la racine :
+ *   // or if importing directly from the root:
  *   const { test, expect } = require('../test-fixtures');
  */
 
@@ -44,9 +44,9 @@ const sendBrowserStackCommand = async (page, action, args) => {
 
 const test = base.test.extend({
   /**
-   * Override du contexte Playwright.
-   * En mode BrowserStack : crée une session distante par test.
-   * En mode local : lance Chromium en headless (CI) ou headed.
+   * Playwright context override.
+   * In BrowserStack mode: creates a remote session per test.
+   * In local mode: launches Chromium in headless (CI) or headed mode.
    */
   context: async ({}, use, testInfo) => {
     if (!isBrowserStackRun()) {
@@ -120,7 +120,7 @@ const test = base.test.extend({
 
       await use(context);
 
-      // Mise à jour du statut dans le dashboard BrowserStack
+      // Update session status in the BrowserStack dashboard
       console.log(`[BrowserStack] Session ${sessionId} finished: ${testInfo.status}`);
       const pages = context.pages();
       if (pages.length > 0 && !pages[0].isClosed()) {
@@ -148,7 +148,7 @@ const test = base.test.extend({
     }
   },
 
-  /* Override de page : utilise la première page du contexte */
+  /* Page override: uses the first page from the context */
   page: async ({ context }, use) => {
     const pages = context.pages();
     const page = pages.length > 0 ? pages[0] : await context.newPage();

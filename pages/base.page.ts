@@ -1,10 +1,10 @@
 /**
- * Playwright Enterprise Kit - Page Object de base
+ * Playwright Enterprise Kit - Base Page Object
  *
- * Toutes les Page Objects de votre projet doivent étendre cette classe.
- * Elle fournit les comportements communs : navigation, attente, screenshots.
+ * All Page Objects in your project should extend this class.
+ * It provides common behaviours: navigation, waiting, screenshots.
  *
- * Usage :
+ * Usage:
  *   import { BasePage } from './base.page';
  *
  *   export class LoginPage extends BasePage {
@@ -29,7 +29,7 @@ export abstract class BasePage {
   constructor(protected readonly page: Page) {}
 
   /**
-   * Navigue vers un chemin relatif ou une URL absolue.
+   * Navigates to a relative path or absolute URL.
    */
   async navigate(path: string): Promise<void> {
     await this.page.goto(path);
@@ -37,37 +37,37 @@ export abstract class BasePage {
   }
 
   /**
-   * Vérifie que le titre de la page correspond au pattern.
+   * Asserts that the page title matches the given pattern.
    */
   async expectTitle(pattern: string | RegExp): Promise<void> {
     await expect(this.page).toHaveTitle(pattern);
   }
 
   /**
-   * Vérifie que l'URL courante correspond au pattern.
+   * Asserts that the current URL matches the given pattern.
    */
   async expectUrl(pattern: string | RegExp): Promise<void> {
     await expect(this.page).toHaveURL(pattern);
   }
 
   /**
-   * Attend qu'un élément soit visible.
+   * Waits for an element to become visible.
    */
   async waitForElement(locator: Locator, timeout = 10000): Promise<void> {
     await locator.waitFor({ state: 'visible', timeout });
   }
 
   /**
-   * Prend un screenshot de la page courante.
-   * @returns Buffer du screenshot
+   * Takes a screenshot of the current page.
+   * @returns Screenshot buffer
    */
   async screenshot(options?: { fullPage?: boolean }): Promise<Buffer> {
     return this.page.screenshot({ fullPage: options?.fullPage ?? false });
   }
 
   /**
-   * Attend un délai fixe.
-   * @deprecated Préférer les assertions explicites quand possible.
+   * Waits for a fixed delay.
+   * @deprecated Prefer explicit assertions whenever possible.
    */
   protected async wait(ms: number): Promise<void> {
     await wait(ms);

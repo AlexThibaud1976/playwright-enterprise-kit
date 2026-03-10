@@ -1,8 +1,8 @@
 /**
- * Playwright Enterprise Kit - Configuration BrowserStack
+ * Playwright Enterprise Kit - BrowserStack configuration
  *
- * Utilise browserstack-fixtures.js pour créer une session par test.
- * Hérite de browserstack.config.js pour les capacités et les credentials.
+ * Uses browserstack-fixtures.js to create one session per test.
+ * Inherits capabilities and credentials from browserstack.config.js.
  */
 
 const { defineConfig } = require('@playwright/test');
@@ -43,7 +43,7 @@ module.exports = defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    // null = viewport plein écran sur BrowserStack
+    // null = full-screen viewport on BrowserStack
     viewport: null,
   },
 

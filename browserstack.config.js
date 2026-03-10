@@ -1,21 +1,21 @@
 /**
- * Playwright Enterprise Kit - Configuration centralisée BrowserStack
+ * Playwright Enterprise Kit - Centralized BrowserStack configuration
  *
- * Tous les paramètres sont injectés via variables d'environnement.
- * En local, copier .env.browserstack.example → .env.browserstack et renseigner les valeurs.
- * En CI, configurer les secrets GitHub Actions correspondants.
+ * All parameters are injected via environment variables.
+ * Locally, copy .env.browserstack.example → .env.browserstack and fill in the values.
+ * In CI, configure the corresponding GitHub Actions secrets.
  *
- * Variables d'environnement :
- *   BROWSERSTACK_USERNAME    - Identifiant BrowserStack (obligatoire)
- *   BROWSERSTACK_ACCESS_KEY  - Clé d'accès BrowserStack (obligatoire)
- *   BS_OS                    - Système d'exploitation (ex: Windows, OS X)
- *   BS_OS_VERSION            - Version OS (ex: 11, Monterey, Sonoma)
- *   BS_BROWSER               - Navigateur (ex: chrome, firefox, safari, edge)
- *   BS_BROWSER_VERSION       - Version navigateur (ex: latest, 131)
- *   BS_DEVICE                - Nom du device mobile (laisse vide pour desktop)
- *   BS_WORKERS               - Nombre de workers parallèles (défaut: 5)
- *   BS_RUN_IN_ORDER          - Exécution séquentielle (défaut: true)
- *   BROWSERSTACK_BUILD_NAME  - Nom du build (auto-généré si non défini)
+ * Environment variables:
+ *   BROWSERSTACK_USERNAME    - BrowserStack username (required)
+ *   BROWSERSTACK_ACCESS_KEY  - BrowserStack access key (required)
+ *   BS_OS                    - Operating system (e.g. Windows, OS X)
+ *   BS_OS_VERSION            - OS version (e.g. 11, Monterey, Sonoma)
+ *   BS_BROWSER               - Browser (e.g. chrome, firefox, safari, edge)
+ *   BS_BROWSER_VERSION       - Browser version (e.g. latest, 131)
+ *   BS_DEVICE                - Mobile device name (leave empty for desktop)
+ *   BS_WORKERS               - Number of parallel workers (default: 5)
+ *   BS_RUN_IN_ORDER          - Sequential execution (default: true)
+ *   BROWSERSTACK_BUILD_NAME  - Build name (auto-generated if not set)
  */
 
 const runInOrder = process.env.BS_RUN_IN_ORDER !== 'false';
@@ -54,7 +54,7 @@ module.exports = {
   buildName:
     process.env.BROWSERSTACK_BUILD_NAME ||
     `Enterprise Kit - ${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`,
-  // Nom du projet affiché dans le dashboard BrowserStack - à personnaliser
+  // Project name displayed in the BrowserStack dashboard - customize as needed
   projectName: process.env.BS_PROJECT_NAME || 'Playwright Enterprise Kit',
   testObservability: true,
   capabilities,

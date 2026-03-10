@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Résout et valide la configuration BrowserStack à partir des paramètres d'entrée
- * avec validation dynamique via l'API BrowserStack
+ * Resolves and validates the BrowserStack configuration from input parameters
+ * with dynamic validation via the BrowserStack API
  *
  * Usage:
  *   node scripts/resolve-browserstack-config.js \
@@ -10,22 +10,22 @@
  *     --browser chrome \
  *     --browserVersion latest
  *
- * Variables d'environnement définies:
- *   - BS_OS (ex: Windows, OS X)
- *   - BS_OS_VERSION (ex: 10, 11, 14, 15)
- *   - BS_BROWSER (ex: chrome, firefox, safari, edge)
- *   - BS_BROWSER_VERSION (ex: latest, 120, 119, etc)
- *   - DEVICE_NAME (ex: win11-chrome-latest)
+ * Environment variables set:
+ *   - BS_OS (e.g. Windows, OS X)
+ *   - BS_OS_VERSION (e.g. 10, 11, 14, 15)
+ *   - BS_BROWSER (e.g. chrome, firefox, safari, edge)
+ *   - BS_BROWSER_VERSION (e.g. latest, 120, 119, etc)
+ *   - DEVICE_NAME (e.g. win11-chrome-latest)
  *
- * Variables d'environnement requises pour la validation API:
+ * Required environment variables for API validation:
  *   - BROWSERSTACK_USERNAME
  *   - BROWSERSTACK_ACCESS_KEY
  */
 
 const fs = require('fs');
 
-// Cache local de secours - utilisé si l'API BrowserStack est inaccessible
-// Mis à jour le 27 janvier 2026 - versions Playwright disponibles sur BrowserStack
+// Local fallback cache - used if the BrowserStack API is unreachable
+// Last updated January 27, 2026 - Playwright versions available on BrowserStack
 const FALLBACK_VERSIONS = {
   os: {
     windows: ['7', '8', '8.1', '10', '11'],
@@ -40,7 +40,7 @@ const FALLBACK_VERSIONS = {
   },
 };
 
-// Mappings statiques pour BrowserStack
+// Static mappings for BrowserStack
 const BROWSERSTACK_MAPPINGS = {
   os: {
     windows: { label: 'Windows' },
@@ -71,15 +71,15 @@ const BROWSERSTACK_MAPPINGS = {
 };
 
 /**
- * Récupère les capabilities disponibles depuis l'API BrowserStack
- * @returns {Promise<Array|null>} Liste des capabilities ou null si erreur
+ * Fetches available capabilities from the BrowserStack API
+ * @returns {Promise<Array|null>} List of capabilities or null on error
  */
 async function fetchBrowserStackCapabilities() {
   const username = process.env.BROWSERSTACK_USERNAME;
   const accessKey = process.env.BROWSERSTACK_ACCESS_KEY;
 
   if (!username || !accessKey) {
-    console.warn('⚠️  Credentials BrowserStack non définis, utilisation du cache local');
+    console.warn('⚠️  BrowserStack credentials not set, using local fallback cache');
     return null;
   }
 
@@ -96,7 +96,7 @@ async function fetchBrowserStackCapabilities() {
     clearTimeout(timeout);
 
     if (!response.ok) {
-      console.warn(`⚠️  API BrowserStack: ${response.status} ${response.statusText}`);
+      console.warn(`⚠️  BrowserStack API: ${response.status} ${response.statusText}`);
       return null;
     }
 
@@ -104,26 +104,26 @@ async function fetchBrowserStackCapabilities() {
   } catch (error) {
     clearTimeout(timeout);
     if (error.name === 'AbortError') {
-      console.warn('⚠️  API BrowserStack: timeout après 10 secondes');
+      console.warn('⚠️  BrowserStack API: timed out after 10 seconds');
     } else {
-      console.warn(`⚠️  API BrowserStack inaccessible: ${error.message}`);
+      console.warn(`⚠️  BrowserStack API unreachable: ${error.message}`);
     }
-    console.warn('   → Utilisation du cache local de secours');
+    console.warn('   → Using local fallback cache');
     return null;
   }
 }
 
 /**
- * Extrait les versions disponibles depuis la réponse API BrowserStack
- * @param {Array} capabilities - Réponse de l'API BrowserStack
- * @param {string} osKey - Clé de l'OS (windows, mac)
- * @param {string} browserKey - Clé du navigateur (chrome, firefox, etc.)
- * @returns {Object} Versions OS et navigateur disponibles
+ * Extracts available versions from the BrowserStack API response
+ * @param {Array} capabilities - BrowserStack API response
+ * @param {string} osKey - OS key (windows, mac)
+ * @param {string} browserKey - Browser key (chrome, firefox, etc.)
+ * @returns {Object} Available OS and browser versions
  */
 function extractAvailableVersions(capabilities, osKey, browserKey) {
   const osLabel = BROWSERSTACK_MAPPINGS.os[osKey].label;
 
-  // Filtrer les combinaisons desktop (device === null)
+  // Filter desktop combinations (device === null)
   const osVersions = [
     ...new Set(
       capabilities
@@ -143,7 +143,7 @@ function extractAvailableVersions(capabilities, osKey, browserKey) {
   return { osVersions, browserVersions };
 }
 
-// Parse les arguments de ligne de commande
+// Parse command-line arguments
 function parseArguments() {
   const args = process.argv.slice(2);
   const params = {
@@ -166,91 +166,91 @@ function parseArguments() {
 }
 
 /**
- * Valide les paramètres avec support de l'API BrowserStack et fallback local
- * @param {Object} params - Paramètres à valider
- * @returns {Promise<Array>} Liste des erreurs (vide si tout est valide)
+ * Validates parameters with BrowserStack API support and local fallback
+ * @param {Object} params - Parameters to validate
+ * @returns {Promise<Array>} List of errors (empty if all valid)
  */
 async function validateParams(params) {
   const errors = [];
   const osKey = params.os?.toLowerCase();
   const browserKey = params.browser?.toLowerCase();
 
-  // Validation OS (statique - liste fixe)
+  // OS validation (static - fixed list)
   if (!params.os) {
-    errors.push('--os est requis (Windows ou Mac)');
+    errors.push('--os is required (Windows or Mac)');
     return errors;
   }
 
   if (!osKey || !BROWSERSTACK_MAPPINGS.os[osKey]) {
     errors.push(
-      `OS invalide: '${params.os}'. Valeurs acceptées: ${Object.keys(BROWSERSTACK_MAPPINGS.os).join(', ')}`
+      `Invalid OS: '${params.os}'. Accepted values: ${Object.keys(BROWSERSTACK_MAPPINGS.os).join(', ')}`
     );
     return errors;
   }
 
-  // Validation browser (statique - liste fixe)
+  // Browser validation (static - fixed list)
   if (!params.browser) {
-    errors.push('--browser est requis (chrome, firefox, safari, edge)');
+    errors.push('--browser is required (chrome, firefox, safari, edge)');
     return errors;
   }
 
   if (!browserKey || !BROWSERSTACK_MAPPINGS.browsers[browserKey]) {
     errors.push(
-      `Navigateur invalide: '${params.browser}'. Valeurs acceptées: ${Object.keys(BROWSERSTACK_MAPPINGS.browsers).join(', ')}`
+      `Invalid browser: '${params.browser}'. Accepted values: ${Object.keys(BROWSERSTACK_MAPPINGS.browsers).join(', ')}`
     );
     return errors;
   }
 
-  // Validation osVersion requise
+  // osVersion validation required
   if (!params.osVersion) {
-    errors.push(`--osVersion est requis pour ${params.os}`);
+    errors.push(`--osVersion is required for ${params.os}`);
     return errors;
   }
 
-  // Validation browserVersion requise
+  // browserVersion validation required
   if (!params.browserVersion) {
-    errors.push(`--browserVersion est requis pour ${params.browser}`);
+    errors.push(`--browserVersion is required for ${params.browser}`);
     return errors;
   }
 
-  // Accepter les patterns "latest", "latest-1", "latest-2", etc. sans validation API
+  // Accept "latest", "latest-1", "latest-2", etc. patterns without API validation
   const isLatestPattern = /^latest(-\d+)?$/.test(params.browserVersion);
 
-  // Récupérer les versions disponibles depuis l'API ou le cache
+  // Retrieve available versions from the API or fallback cache
   const capabilities = await fetchBrowserStackCapabilities();
 
   let availableOsVersions, availableBrowserVersions;
 
   if (capabilities) {
-    console.log('✅ Versions récupérées depuis l\'API BrowserStack');
+    console.log('✅ Versions retrieved from BrowserStack API');
     const extracted = extractAvailableVersions(capabilities, osKey, browserKey);
     availableOsVersions = extracted.osVersions;
     availableBrowserVersions = extracted.browserVersions;
   } else {
-    // Fallback vers le cache local
+    // Fallback to local cache
     availableOsVersions = FALLBACK_VERSIONS.os[osKey] || [];
     availableBrowserVersions = FALLBACK_VERSIONS.browsers[browserKey] || [];
   }
 
-  // Validation version OS
+  // OS version validation
   if (!availableOsVersions.includes(params.osVersion)) {
     const versionsDisplay =
       availableOsVersions.length > 10
         ? availableOsVersions.slice(0, 10).join(', ') + '...'
         : availableOsVersions.join(', ');
     errors.push(
-      `Version OS '${params.osVersion}' non disponible pour ${params.os}.\n   Versions disponibles: ${versionsDisplay}`
+      `OS version '${params.osVersion}' not available for ${params.os}.\n   Available versions: ${versionsDisplay}`
     );
   }
 
-  // Validation version browser (sauf si pattern "latest")
+  // Browser version validation (unless "latest" pattern)
   if (!isLatestPattern && !availableBrowserVersions.includes(params.browserVersion)) {
     const versionsDisplay =
       availableBrowserVersions.length > 10
         ? availableBrowserVersions.slice(0, 10).join(', ') + '...'
         : availableBrowserVersions.join(', ');
     errors.push(
-      `Version navigateur '${params.browserVersion}' non disponible pour ${params.browser}.\n   Versions disponibles: ${versionsDisplay}`
+      `Browser version '${params.browserVersion}' not available for ${params.browser}.\n   Available versions: ${versionsDisplay}`
     );
   }
 
@@ -258,9 +258,9 @@ async function validateParams(params) {
 }
 
 /**
- * Résout et construit la configuration BrowserStack à partir des paramètres validés
- * @param {Object} params - Paramètres de configuration (os, osVersion, browser, browserVersion)
- * @returns {Object} Configuration résolue avec variables d'environnement
+ * Resolves and builds the BrowserStack configuration from validated parameters
+ * @param {Object} params - Configuration parameters (os, osVersion, browser, browserVersion)
+ * @returns {Object} Resolved configuration with environment variables
  */
 function resolveConfig(params) {
   const osKey = params.os.toLowerCase();
@@ -269,7 +269,7 @@ function resolveConfig(params) {
   const osLabel = BROWSERSTACK_MAPPINGS.os[osKey].label;
   const browserInfo = BROWSERSTACK_MAPPINGS.browsers[browserKey];
 
-  // Utiliser le nom de navigateur BrowserStack (ex: playwright-firefox)
+  // Use the BrowserStack browser name (e.g. playwright-firefox)
   const browserName = browserInfo.browserName;
 
   const config = {
@@ -284,26 +284,26 @@ function resolveConfig(params) {
 }
 
 /**
- * Exporte la configuration en tant que variables d'environnement
- * En mode GitHub Actions: écrit dans GITHUB_ENV
- * En mode local: affiche les variables dans la console
- * @param {Object} config - Configuration à exporter
- * @returns {Object} Configuration exportée
+ * Exports the configuration as environment variables
+ * In GitHub Actions mode: writes to GITHUB_ENV
+ * In local mode: prints variables to the console
+ * @param {Object} config - Configuration to export
+ * @returns {Object} Exported configuration
  */
 function exportForGitHub(config) {
   const gitHubEnv = process.env.GITHUB_ENV;
 
   if (gitHubEnv) {
-    // Mode GitHub Actions: écrire dans GITHUB_ENV pour persistance entre les steps
+    // GitHub Actions mode: write to GITHUB_ENV for persistence across steps
     const envContent = Object.entries(config)
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
     fs.appendFileSync(gitHubEnv, envContent + '\n');
-    console.log('✅ Variables d\'environnement exportées vers GITHUB_ENV');
+    console.log('✅ Environment variables exported to GITHUB_ENV');
   } else {
-    // Développement local: afficher les variables
-    console.log('\n📋 Configuration BrowserStack résolue:');
+    // Local development: print the variables
+    console.log('\n📋 Resolved BrowserStack configuration:');
     Object.entries(config).forEach(([key, value]) => {
       console.log(`   ${key}=${value}`);
     });
@@ -318,7 +318,7 @@ async function main() {
 
   const errors = await validateParams(params);
   if (errors.length > 0) {
-    console.error('❌ Erreur de validation:\n');
+    console.error('❌ Validation error:\n');
     errors.forEach((error) => console.error(`   • ${error}`));
     console.error('\n📖 Usage:');
     console.error('   node scripts/resolve-browserstack-config.js \\');
@@ -326,7 +326,7 @@ async function main() {
     console.error('     --osVersion <version> \\');
     console.error('     --browser <browser> \\');
     console.error('     --browserVersion <version>');
-    console.error('\n💡 Exemples:');
+    console.error('\n💡 Examples:');
     console.error(
       '   node scripts/resolve-browserstack-config.js --os Windows --osVersion 11 --browser chrome --browserVersion latest'
     );
@@ -334,16 +334,16 @@ async function main() {
       '   node scripts/resolve-browserstack-config.js --os Mac --osVersion Sonoma --browser safari --browserVersion 18'
     );
     console.error('\n📝 Notes:');
-    console.error('   • Les versions OS/navigateur sont validées dynamiquement via l\'API BrowserStack');
-    console.error('   • Utilisez "latest", "latest-1", "latest-2" pour les versions récentes');
-    console.error('   • Un cache local est utilisé si l\'API est inaccessible');
+    console.error('   • OS/browser versions are validated dynamically via the BrowserStack API');
+    console.error('   • Use "latest", "latest-1", "latest-2" for recent versions');
+    console.error('   • A local cache is used when the API is unreachable');
     process.exit(1);
   }
 
   const config = resolveConfig(params);
   exportForGitHub(config);
 
-  // Retourner la config en JSON pour parsing
+  // Return config as JSON for parsing
   console.log(JSON.stringify(config));
   process.exit(0);
 }

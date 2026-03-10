@@ -1,30 +1,30 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Enterprise Kit - Configuration principale
+ * Playwright Enterprise Kit - Main configuration
  *
- * Variables d'environnement disponibles :
- *   BASE_URL       - URL de l'application à tester (obligatoire en prod)
- *   HEADLESS       - Mode headless (true/false, défaut: true en CI)
- *   TEST_TIMEOUT   - Timeout global des tests en ms (défaut: 60000)
- *   CI             - Détecté automatiquement par GitHub Actions
+ * Available environment variables:
+ *   BASE_URL       - Application URL to test (required in production)
+ *   HEADLESS       - Headless mode (true/false, default: true in CI)
+ *   TEST_TIMEOUT   - Global test timeout in ms (default: 60000)
+ *   CI             - Automatically detected by GitHub Actions
  */
 export default defineConfig({
   testDir: './tests',
 
-  /* Ordre d'exécution */
+  /* Execution order */
   testOrder: 'file',
 
-  /* Désactiver le parallélisme par défaut (activer selon besoins) */
+  /* Disable parallelism by default (enable as needed) */
   fullyParallel: false,
 
-  /* Interdire les .only() en CI */
+  /* Forbid .only() in CI */
   forbidOnly: !!process.env.CI,
 
   /* Retries automatiques en CI */
   retries: process.env.CI ? 2 : 0,
 
-  /* Nombre de workers */
+  /* Number of workers */
   workers: process.env.CI ? 4 : 2,
 
   /* Reporters */
@@ -37,10 +37,10 @@ export default defineConfig({
       embedTestrunAnnotationsAsItemProperties: true,
       embedAttachmentsAsProperty: 'testrun_evidence',
       textContentAnnotations: ['test_description', 'testrun_comment'],
-      // Exclure les test_key pour éviter les erreurs si les tests ne sont pas encore dans Jira
+      // Exclude test_key to avoid errors when tests do not yet exist in Jira
       annotationsToExclude: ['test_key'],
     }],
-    // Résumé visuel GitHub Actions (activé automatiquement en CI)
+    // GitHub Actions visual summary (auto-enabled in CI)
     ...(process.env.GITHUB_ACTIONS
       ? [['@estruyf/github-actions-reporter', {
           title: 'Playwright Test Results',
@@ -52,10 +52,10 @@ export default defineConfig({
   ],
 
   use: {
-    /* URL de base - configurable via variable d'environnement */
+    /* Base URL - configurable via environment variable */
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
-    /* Traces, screenshots, vidéos */
+    /* Traces, screenshots, videos */
     trace: 'on-first-retry',
     screenshot: {
       mode: 'only-on-failure',

@@ -1,61 +1,61 @@
 # Playwright Enterprise Kit
 
-Framework Playwright enterprise-ready, prêt à l'emploi et distribuable à toutes les équipes.
+Enterprise-ready Playwright framework, ready to use and distributable across all teams.
 
-**Inclus out-of-the-box :**
-- Jira/Xray (upload des résultats, création automatique de Test Executions)
-- BrowserStack (desktop + mobile, sélection dynamique OS/navigateur)
-- Confluence (reporting historique automatique)
-- GitHub Actions (workflow paramétré avec résumé visuel)
+**Included out-of-the-box:**
+- Jira/Xray (results upload, automatic Test Execution creation)
+- BrowserStack (desktop + mobile, dynamic OS/browser selection)
+- Confluence (automatic historical reporting)
+- GitHub Actions (parameterized workflow with visual summary)
 - TypeScript + POM (Page Object Model)
-- Evidence automatique (screenshots attachés aux rapports Xray)
+- Automatic evidence (screenshots attached to Xray reports)
 
 ---
 
-## Structure du projet
+## Project structure
 
 ```
 playwright-enterprise-kit/
 ├── .github/
 │   └── workflows/
-│       └── playwright.yml          # CI/CD paramétré (BrowserStack + Jira + Confluence)
+│       └── playwright.yml          # Parameterized CI/CD (BrowserStack + Jira + Confluence)
 ├── pages/
-│   └── base.page.ts               # Classe de base pour vos Page Objects
+│   └── base.page.ts               # Base class for your Page Objects
 ├── scripts/
-│   ├── upload-xray.ps1             # Upload JUnit XML vers Xray Cloud
-│   ├── jira-post-execution.ps1     # Enrichissement de la Test Execution Jira
-│   ├── update-confluence-report.js # Mise à jour du dashboard Confluence
-│   ├── resolve-browserstack-config.js  # Validation de la config BrowserStack
-│   ├── get-browserstack-build-link.js  # Récupération du lien build BrowserStack
-│   ├── add-timestamps-to-xray-report.js # Post-traitement du XML Xray
-│   └── remove-test-keys.js         # Nettoyage des test_key orphelins
+│   ├── upload-xray.ps1             # Upload JUnit XML to Xray Cloud
+│   ├── jira-post-execution.ps1     # Enrich the Jira Test Execution
+│   ├── update-confluence-report.js # Update Confluence dashboard
+│   ├── resolve-browserstack-config.js  # Validate BrowserStack configuration
+│   ├── get-browserstack-build-link.js  # Retrieve BrowserStack build link
+│   ├── add-timestamps-to-xray-report.js # Post-process Xray XML report
+│   └── remove-test-keys.js         # Remove orphan test_keys
 ├── tests/
 │   └── example/
-│       ├── 01-sanity.spec.ts       # Test de sanité (health check)
-│       └── 02-login.spec.ts        # Exemple avec POM
+│       ├── 01-sanity.spec.ts       # Sanity test (health check)
+│       └── 02-login.spec.ts        # Example with POM
 ├── utils/
-│   └── helpers.ts                  # Utilitaires génériques
-├── browserstack.config.js          # Configuration centralisée BrowserStack
-├── browserstack-fixtures.js        # Fixtures Playwright pour BrowserStack
-├── browserstack-reporter.js        # Reporter BrowserStack personnalisé
-├── playwright.config.ts            # Configuration Playwright principale
-├── playwright.config.browserstack.js  # Configuration Playwright BrowserStack
-├── test-fixtures.js                # Sélecteur auto de fixtures (local / BS)
+│   └── helpers.ts                  # Generic utilities
+├── browserstack.config.js          # Centralized BrowserStack configuration
+├── browserstack-fixtures.js        # Playwright fixtures for BrowserStack
+├── browserstack-reporter.js        # Custom BrowserStack reporter
+├── playwright.config.ts            # Main Playwright configuration
+├── playwright.config.browserstack.js  # BrowserStack Playwright configuration
+├── test-fixtures.js                # Auto fixture selector (local / BS)
 ├── tsconfig.json
 ├── package.json
-├── .env.example                    # Template variables d'environnement
-└── .env.browserstack.example       # Template config BrowserStack
+├── .env.example                    # Environment variables template
+└── .env.browserstack.example       # BrowserStack configuration template
 ```
 
 ---
 
-## Démarrage rapide
+## Quick start
 
-### 1. Créer votre repo depuis ce template
+### 1. Create your repo from this template
 
-Sur GitHub, cliquer sur **"Use this template"** → **"Create a new repository"**.
+On GitHub, click **"Use this template"** → **"Create a new repository"**.
 
-### 2. Cloner et installer
+### 2. Clone and install
 
 ```bash
 git clone https://github.com/yourorg/your-project-tests.git
@@ -64,23 +64,23 @@ npm install
 npx playwright install
 ```
 
-### 3. Configurer l'environnement
+### 3. Configure the environment
 
 ```bash
 cp .env.example .env
-# Éditer .env avec vos valeurs (BASE_URL, JIRA_URL, tokens...)
+# Edit .env with your values (BASE_URL, JIRA_URL, tokens...)
 ```
 
-### 4. Lancer les tests en local
+### 4. Run tests locally
 
 ```bash
-npm test                    # Tous les tests (headless)
-npm run test:headed         # Avec navigateur visible
-npm run test:ui             # Mode interactif Playwright
-npm run test:example        # Uniquement les tests d'exemple
+npm test                    # All tests (headless)
+npm run test:headed         # With visible browser
+npm run test:ui             # Playwright interactive mode
+npm run test:example        # Example tests only
 ```
 
-### 5. Voir le rapport
+### 5. View the report
 
 ```bash
 npm run test:report
@@ -88,17 +88,17 @@ npm run test:report
 
 ---
 
-## Configuration Jira / Xray
+## Jira / Xray configuration
 
-### Prérequis
+### Prerequisites
 
-- Compte Jira Cloud avec Xray installé
-- Un projet Jira existant (ex: `MYPROJECT`)
-- Des credentials Xray Cloud (client_id + client_secret)
+- Jira Cloud account with Xray installed
+- An existing Jira project (e.g. `MYPROJECT`)
+- Xray Cloud credentials (client_id + client_secret)
 
-### Variables d'environnement
+### Environment variables
 
-Dans `.env` :
+In `.env`:
 
 ```env
 JIRA_URL=https://yourcompany.atlassian.net
@@ -109,12 +109,12 @@ XRAY_CLIENT_ID=your_xray_client_id
 XRAY_CLIENT_SECRET=your_xray_client_secret
 ```
 
-> Les tokens Jira API se créent sur : https://id.atlassian.com/manage-profile/security/api-tokens
-> Les credentials Xray Cloud se créent dans : Xray → API Keys
+> Jira API tokens can be created at: https://id.atlassian.com/manage-profile/security/api-tokens
+> Xray Cloud credentials are created in: Xray → API Keys
 
-### Lier un test à Jira
+### Linking a test to Jira
 
-Dans un test, ajouter l'annotation `test_key` :
+In a test, add the `test_key` annotation:
 
 ```typescript
 test('User can login', async ({ page }, testInfo) => {
@@ -123,53 +123,53 @@ test('User can login', async ({ page }, testInfo) => {
 });
 ```
 
-> Si le test n'a pas encore de test_key (test nouveau), ne pas ajouter l'annotation.
-> Xray créera automatiquement un nouveau Test dans Jira.
+> If the test does not yet have a test_key (new test), do not add the annotation.
+> Xray will automatically create a new Test in Jira.
 
-### Workflow de test
+### Test workflow
 
-1. Créer un **Test Plan** dans Jira (ex: `MYPROJECT-100`)
-2. Déclencher le workflow GitHub Actions avec la clé du Test Plan
-3. Xray crée automatiquement une **Test Execution** liée au Test Plan
-4. La Test Execution est enrichie : titre, labels, champs personnalisés, rapport HTML, liens GitHub/BrowserStack
+1. Create a **Test Plan** in Jira (e.g. `MYPROJECT-100`)
+2. Trigger the GitHub Actions workflow with the Test Plan key
+3. Xray automatically creates a **Test Execution** linked to the Test Plan
+4. The Test Execution is enriched: title, labels, custom fields, HTML report, GitHub/BrowserStack links
 
 ---
 
-## Configuration BrowserStack
+## BrowserStack configuration
 
-### Prérequis
+### Prerequisites
 
-- Compte BrowserStack Automate
-- Credentials : `BROWSERSTACK_USERNAME` + `BROWSERSTACK_ACCESS_KEY`
+- BrowserStack Automate account
+- Credentials: `BROWSERSTACK_USERNAME` + `BROWSERSTACK_ACCESS_KEY`
 
-### En local
+### Locally
 
 ```bash
 cp .env.browserstack.example .env.browserstack
-# Éditer .env.browserstack avec vos credentials
+# Edit .env.browserstack with your credentials
 source .env.browserstack
 npm run test:browserstack
 ```
 
 ### Via GitHub Actions (workflow_dispatch)
 
-Paramètres disponibles lors du déclenchement manuel :
+Parameters available when triggering manually:
 
-| Paramètre      | Description                           | Exemples                    |
+| Parameter      | Description                           | Examples                    |
 |---------------|---------------------------------------|------------------------------|
-| `issueKey`    | Clé du Test Plan Jira                 | `MYPROJECT-100`             |
-| `os`          | Système d'exploitation                | `Windows`, `Mac`            |
-| `osVersion`   | Version de l'OS                       | `11`, `Sonoma`, `Sequoia`   |
-| `browser`     | Navigateur                            | `chrome`, `firefox`, `safari`, `edge` |
-| `browserVersion` | Version du navigateur             | `latest`, `131`             |
-| `testScope`   | Périmètre de test                     | `all`, `sanity`, `login`    |
-| `confluenceReport` | Publier sur Confluence          | `true` / `false`            |
+| `issueKey`    | Jira Test Plan key                    | `MYPROJECT-100`             |
+| `os`          | Operating system                      | `Windows`, `Mac`            |
+| `osVersion`   | OS version                            | `11`, `Sonoma`, `Sequoia`   |
+| `browser`     | Browser                               | `chrome`, `firefox`, `safari`, `edge` |
+| `browserVersion` | Browser version                   | `latest`, `131`             |
+| `testScope`   | Test scope                            | `all`, `sanity`, `login`    |
+| `confluenceReport` | Publish to Confluence          | `true` / `false`            |
 
-### Secrets GitHub Actions à configurer
+### GitHub Actions secrets to configure
 
-Dans **Settings > Secrets and variables > Actions** :
+In **Settings > Secrets and variables > Actions**:
 
-**Jira/Xray (requis pour l'upload) :**
+**Jira/Xray (required for upload):**
 ```
 JIRA_URL
 JIRA_USER
@@ -178,23 +178,23 @@ XRAY_CLIENT_ID
 XRAY_CLIENT_SECRET
 ```
 
-**BrowserStack (requis pour les tests distants) :**
+**BrowserStack (required for remote tests):**
 ```
 BROWSERSTACK_USERNAME
 BROWSERSTACK_ACCESS_KEY
 ```
 
-**Confluence (optionnel) :**
+**Confluence (optional):**
 ```
-CONFLUENCE_URL          # ex: https://yourco.atlassian.net/wiki
+CONFLUENCE_URL          # e.g. https://yourco.atlassian.net/wiki
 CONFLUENCE_USER
 CONFLUENCE_API_TOKEN
-CONFLUENCE_SPACE_KEY    # ex: QA
-CONFLUENCE_PAGE_TITLE   # ex: Test Execution Dashboard
-CONFLUENCE_PARENT_PAGE_ID  # optionnel
+CONFLUENCE_SPACE_KEY    # e.g. QA
+CONFLUENCE_PAGE_TITLE   # e.g. Test Execution Dashboard
+CONFLUENCE_PARENT_PAGE_ID  # optional
 ```
 
-**Champs personnalisés Jira (optionnel) :**
+**Jira custom fields (optional):**
 ```
 JIRA_CUSTOM_FIELD_OS
 JIRA_CUSTOM_FIELD_OS_VERSION
@@ -203,14 +203,14 @@ JIRA_CUSTOM_FIELD_BROWSER_VERSION
 JIRA_CUSTOM_FIELD_TEST_SCOPE
 ```
 
-> Pour récupérer les IDs des champs personnalisés Jira, appeler :
+> To retrieve Jira custom field IDs, call:
 > `GET https://yourco.atlassian.net/rest/api/3/field`
 
 ---
 
-## Ajouter vos propres tests
+## Adding your own tests
 
-### 1. Créer une Page Object
+### 1. Create a Page Object
 
 ```typescript
 // pages/login.page.ts
@@ -231,7 +231,7 @@ export class LoginPage extends BasePage {
 }
 ```
 
-### 2. Écrire les tests
+### 2. Write the tests
 
 ```typescript
 // tests/auth/login.spec.ts
@@ -241,7 +241,7 @@ import { captureEvidence } from '../../utils/helpers';
 
 test.describe('Login', () => {
   test('User can login with valid credentials', async ({ page }, testInfo) => {
-    // Lier à Jira (optionnel)
+    // Link to Jira (optional)
     testInfo.annotations.push({ type: 'test_key', value: 'MYPROJECT-1' });
 
     const loginPage = new LoginPage(page);
@@ -253,15 +253,15 @@ test.describe('Login', () => {
 });
 ```
 
-### 3. Ajouter le scope au workflow
+### 3. Add the scope to the workflow
 
-Dans `.github/workflows/playwright.yml`, ajouter le scope dans les deux sections :
+In `.github/workflows/playwright.yml`, add the scope in both sections:
 
 ```yaml
-# Dans workflow_dispatch.inputs.testScope.options :
+# In workflow_dispatch.inputs.testScope.options:
           - login
 
-# Dans l'étape "Determine test pattern" :
+# In the "Determine test pattern" step:
             "login")
               echo "pattern=tests/auth/login.spec.ts" >> $GITHUB_OUTPUT
               echo "description=Login Tests" >> $GITHUB_OUTPUT
@@ -272,57 +272,57 @@ Dans `.github/workflows/playwright.yml`, ajouter le scope dans les deux sections
 
 ## Reporting
 
-### Rapport Playwright (HTML)
+### Playwright report (HTML)
 
-Généré automatiquement après chaque exécution dans `playwright-report/`.
+Generated automatically after each run in `playwright-report/`.
 
 ```bash
 npm run test:report
 ```
 
-### Rapport GitHub Actions
+### GitHub Actions report
 
-Un résumé visuel est affiché dans l'onglet **Summary** du job GitHub Actions (via `@estruyf/github-actions-reporter`).
+A visual summary is displayed in the **Summary** tab of the GitHub Actions job (via `@estruyf/github-actions-reporter`).
 
-### Rapport Jira/Xray
+### Jira/Xray report
 
-Chaque exécution crée une **Test Execution** dans Jira avec :
-- Titre : `[PASS/FAIL] Test Execution - <scope> - <device>`
-- Labels : nom du device + résultat (PASS/FAIL)
-- Champs personnalisés : OS, browser, version, scope
-- Pièce jointe : rapport HTML Playwright
-- Liens : GitHub Actions + BrowserStack
+Each run creates a **Test Execution** in Jira with:
+- Title: `[PASS/FAIL] Test Execution - <scope> - <device>`
+- Labels: device name + result (PASS/FAIL)
+- Custom fields: OS, browser, version, scope
+- Attachment: Playwright HTML report
+- Links: GitHub Actions + BrowserStack
 
-### Dashboard Confluence (optionnel)
+### Confluence dashboard (optional)
 
-Activer `confluenceReport: true` lors du déclenchement du workflow.
-La page Confluence est créée automatiquement si elle n'existe pas, et mise à jour avec une nouvelle ligne à chaque exécution.
+Enable `confluenceReport: true` when triggering the workflow.
+The Confluence page is created automatically if it does not exist, and updated with a new row after each run.
 
-Colonnes : Date | Résultat | Scope | OS | Navigateur | Test Execution Jira | GitHub | BrowserStack
+Columns: Date | Result | Scope | OS | Browser | Jira Test Execution | GitHub | BrowserStack
 
 ---
 
-## Adapter le framework à votre projet
+## Adapting the framework to your project
 
-### Étapes minimales
+### Minimum steps
 
-1. **`playwright.config.ts`** : ajuster `workers`, `retries`, `projects` (navigateurs)
-2. **`package.json`** : mettre à jour `name`, `description`, `author`
-3. **`.github/workflows/playwright.yml`** : changer `JIRA_PROJECT_KEY`, ajouter vos scopes
-4. **`browserstack.config.js`** : changer `projectName`
-5. **`.env.example`** : adapter `BASE_URL`, `JIRA_PROJECT_KEY`
-6. **Tests** : remplacer `tests/example/` par vos vrais tests
+1. **`playwright.config.ts`**: adjust `workers`, `retries`, `projects` (browsers)
+2. **`package.json`**: update `name`, `description`, `author`
+3. **`.github/workflows/playwright.yml`**: change `JIRA_PROJECT_KEY`, add your scopes
+4. **`browserstack.config.js`**: change `projectName`
+5. **`.env.example`**: adapt `BASE_URL`, `JIRA_PROJECT_KEY`
+6. **Tests**: replace `tests/example/` with your actual tests
 
-### Recommandations
+### Recommendations
 
-- Organiser les tests par fonctionnalité : `tests/auth/`, `tests/checkout/`, `tests/catalog/`
-- Créer une Page Object par page/composant : `pages/login.page.ts`, `pages/header.page.ts`
-- Utiliser `generateUserData()` pour les données de test dynamiques
-- Utiliser `captureEvidence()` pour les screenshots attachés à Xray
-- Ne jamais committer `.env` ou `.env.browserstack` (déjà dans `.gitignore`)
+- Organize tests by feature: `tests/auth/`, `tests/checkout/`, `tests/catalog/`
+- Create one Page Object per page/component: `pages/login.page.ts`, `pages/header.page.ts`
+- Use `generateUserData()` for dynamic test data
+- Use `captureEvidence()` for screenshots attached to Xray
+- Never commit `.env` or `.env.browserstack` (already in `.gitignore`)
 
 ---
 
 ## Support
 
-Pour toute question ou contribution, ouvrir une issue sur le repository.
+For any question or contribution, open an issue on the repository.

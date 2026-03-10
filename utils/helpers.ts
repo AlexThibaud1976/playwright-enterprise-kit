@@ -1,29 +1,29 @@
 /**
- * Playwright Enterprise Kit - Utilitaires génériques
+ * Playwright Enterprise Kit - Generic utilities
  *
- * Fonctions réutilisables indépendantes du projet :
- * - Capture d'evidence (screenshots pour Xray)
- * - Données de test uniques
- * - Helpers d'attente
- * - Assertion d'URL compatible BrowserStack
+ * Reusable project-agnostic functions:
+ * - Evidence capture (screenshots for Xray)
+ * - Unique test data
+ * - Wait helpers
+ * - BrowserStack-compatible URL assertion
  */
 
 import { Page, TestInfo, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-/** Dossier de stockage des screenshots d'evidence */
+/** Storage directory for evidence screenshots */
 export const EVIDENCE_DIR = 'test-results/evidence';
 
 // ── Evidence ────────────────────────────────────────────────────────────────
 
 /**
- * Prend un screenshot et l'attache comme evidence au rapport Playwright / Xray.
+ * Takes a screenshot and attaches it as evidence to the Playwright / Xray report.
  *
- * @param page     - Page Playwright
- * @param testInfo - Info du test en cours
- * @param name     - Nom descriptif du screenshot
- * @returns Chemin du fichier créé
+ * @param page     - Playwright page
+ * @param testInfo - Current test info
+ * @param name     - Descriptive name for the screenshot
+ * @returns Path to the created file
  */
 export async function captureEvidence(
   page: Page,
@@ -36,7 +36,7 @@ export async function captureEvidence(
 
   const timestamp = Date.now();
   const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
-  // Préfixe avec test_key si disponible (pour l'intégration Xray)
+  // Prefix with test_key if available (for Xray integration)
   const annotation = testInfo.annotations.find(a => a.type === 'test_key');
   const testKey = annotation?.description || 'test';
   const filename = `${testKey}_${sanitizedName}_${timestamp}.png`;
@@ -45,7 +45,7 @@ export async function captureEvidence(
   try {
     await page.screenshot({
       path: filepath,
-      fullPage: false, // viewport uniquement (évite les timeouts sur BrowserStack)
+      fullPage: false, // viewport only (avoids timeouts on BrowserStack)
       timeout: 5000,
     });
     await testInfo.attach(name, { path: filepath, contentType: 'image/png' });
@@ -58,7 +58,7 @@ export async function captureEvidence(
 }
 
 /**
- * Exécute une assertion puis capture un screenshot si elle réussit.
+ * Runs an assertion then captures a screenshot if it passes.
  */
 export async function verifyWithEvidence(
   page: Page,
@@ -70,11 +70,11 @@ export async function verifyWithEvidence(
   await captureEvidence(page, testInfo, evidenceName);
 }
 
-// ── Données de test ─────────────────────────────────────────────────────────
+// ── Test data ───────────────────────────────────────────────────────────────
 
 /**
- * Génère des données utilisateur uniques basées sur le timestamp.
- * Utile pour éviter les conflits entre runs parallèles.
+ * Generates unique user data based on the current timestamp.
+ * Useful to avoid conflicts between parallel runs.
  */
 export function generateUserData(prefix = 'test') {
   const ts = Date.now();
@@ -96,8 +96,8 @@ export function getTimestamp(): number {
 // ── Attente ─────────────────────────────────────────────────────────────────
 
 /**
- * Attend un délai fixe en millisecondes.
- * À utiliser avec parcimonie — préférer les assertions Playwright quand possible.
+ * Waits for a fixed delay in milliseconds.
+ * Use sparingly — prefer Playwright assertions whenever possible.
  */
 export function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -106,12 +106,12 @@ export function wait(ms: number): Promise<void> {
 // ── URL ─────────────────────────────────────────────────────────────────────
 
 /**
- * Assertion d'URL compatible avec BrowserStack (évite expect(page).toHaveURL
- * qui n'est pas supporté en mode mobile sur BrowserStack).
+ * BrowserStack-compatible URL assertion (avoids expect(page).toHaveURL
+ * which is not supported on BrowserStack mobile mode).
  *
- * @param page     - Page Playwright
- * @param expected - URL attendue (string ou RegExp)
- * @param timeout  - Timeout en ms (défaut: 10000)
+ * @param page     - Playwright page
+ * @param expected - Expected URL (string or RegExp)
+ * @param timeout  - Timeout in ms (default: 10000)
  */
 export async function assertUrl(
   page: Page,
@@ -128,11 +128,11 @@ export async function assertUrl(
   }
 }
 
-// ── Cartes de test ──────────────────────────────────────────────────────────
+// ── Test cards ──────────────────────────────────────────────────────────────
 
 /**
- * Cartes bancaires de test standard (format Adyen/Stripe test cards).
- * Ces numéros fonctionnent uniquement dans les environnements de test.
+ * Standard test credit cards (Adyen/Stripe test card format).
+ * These numbers only work in test environments.
  */
 export const TEST_CARDS = {
   visa: {

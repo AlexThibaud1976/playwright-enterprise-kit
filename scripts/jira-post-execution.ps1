@@ -1,51 +1,51 @@
-<#
+﻿<#
 .SYNOPSIS
-    Enrichissement d'une Test Execution Jira après exécution des tests Playwright
+    Enriches a Jira Test Execution after Playwright test execution
 
 .DESCRIPTION
-    Ce script enrichit automatiquement la Test Execution Jira créée par Xray :
-    - Champs personnalisés (OS, Browser, Version, Test Scope) [optionnel]
-    - Labels : device testé + résultat (PASS/FAIL)
-    - Titre descriptif avec emoji résultat
-    - Pièce jointe : rapport HTML Playwright
-    - Lien distant vers GitHub Actions
-    - Lien distant vers BrowserStack [optionnel]
+    This script automatically enriches the Jira Test Execution created by Xray:
+    - Custom fields (OS, Browser, Version, Test Scope) [optional]
+    - Labels: tested device + result (PASS/FAIL)
+    - Descriptive title with result emoji
+    - Attachment: Playwright HTML report
+    - Remote link to GitHub Actions
+    - Remote link to BrowserStack [optional]
 
 .PARAMETER ExecKey
-    Clé Jira de la Test Execution créée par upload-xray.ps1 (ex: MYPROJECT-123)
+    Jira key of the Test Execution created by upload-xray.ps1 (e.g. MYPROJECT-123)
 
 .PARAMETER DeviceName
-    Nom de la configuration testée (ex: win-11-chrome-latest)
+    Name of the tested configuration (e.g. win-11-chrome-latest)
 
 .PARAMETER TestResult
-    Résultat : PASS, FAIL ou UNKNOWN
+    Result: PASS, FAIL or UNKNOWN
 
 .PARAMETER TestScope
-    Périmètre de test exécuté (ex: "All Tests", "Login")
+    Test scope executed (e.g. "All Tests", "Login")
 
 .PARAMETER JiraUrl
-    URL de base Jira (ex: https://yourcompany.atlassian.net)
+    Base Jira URL (e.g. https://yourcompany.atlassian.net)
 
 .PARAMETER JiraUser
-    Email de l'utilisateur Jira (pour Basic Auth)
+    Jira user email (for Basic Auth)
 
 .PARAMETER JiraApiToken
-    Token API Jira
+    Jira API token
 
 .PARAMETER GitHubRepository
-    Nom du repo GitHub (format: owner/repo)
+    GitHub repository name (format: owner/repo)
 
 .PARAMETER GitHubRunId
-    ID de l'exécution GitHub Actions
+    GitHub Actions run ID
 
 .PARAMETER GitHubRunNumber
-    Numéro de l'exécution GitHub Actions
+    GitHub Actions run number
 
 .PARAMETER BrowserStackBuildUrl
-    [Optionnel] URL du build BrowserStack
+    [Optional] BrowserStack build URL
 
 .PARAMETER ReportPath
-    Chemin du dossier de rapports Playwright (défaut: playwright-report)
+    Path to the Playwright reports folder (default: playwright-report)
 
 .EXAMPLE
     ./scripts/jira-post-execution.ps1 `
@@ -61,14 +61,14 @@
       -GitHubRunNumber "42"
 
 .NOTES
-    Secrets GitHub Actions requis :
+    Required GitHub Actions secrets:
       JIRA_URL, JIRA_USER, JIRA_API_TOKEN
 
-    Champs personnalisés (optionnels) :
+    Custom fields (optional):
       JIRA_CUSTOM_FIELD_OS, JIRA_CUSTOM_FIELD_OS_VERSION,
       JIRA_CUSTOM_FIELD_BROWSER, JIRA_CUSTOM_FIELD_BROWSER_VERSION,
       JIRA_CUSTOM_FIELD_TEST_SCOPE
-      (récupérables via scripts/get-custom-field-ids.ps1)
+      (retrievable via scripts/get-custom-field-ids.ps1)
 #>
 
 param(
@@ -96,7 +96,7 @@ Write-Host "=============================================="
 $basicAuth  = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${JiraUser}:${JiraApiToken}"))
 $jsonHeaders = @{ Authorization = "Basic $basicAuth"; Accept = "application/json" }
 
-# ─── 1. Champs personnalisés (optionnel) ───────────────────────────────────────
+# ─── 1. Custom fields (optional) ─────────────────────────────────────────────
 Write-Host "`n[1/6] Updating custom fields..."
 $cfObj = @{ fields = @{} }
 
@@ -129,7 +129,7 @@ if ($cfObj.fields.Count -gt 0) {
   Write-Host "Custom field env vars not set (optional, skipping)"
 }
 
-# ─── 2. Labels (device + résultat) ────────────────────────────────────────────
+# ─── 2. Labels (device + result) ──────────────────────────────────────────────
 Write-Host "`n[2/6] Updating labels..."
 try {
   $issue = Invoke-RestMethod -Method Get -Uri "$JiraUrl/rest/api/3/issue/$ExecKey" -Headers $jsonHeaders
@@ -144,7 +144,7 @@ try {
   Write-Host "Warning: Labels update failed - $($_.Exception.Message)"
 }
 
-# ─── 3. Titre avec emoji résultat ──────────────────────────────────────────────
+# ─── 3. Title with result emoji ───────────────────────────────────────────────
 Write-Host "`n[3/6] Updating title..."
 $resultEmoji = if ($TestResult -eq "PASS") { "[PASS]" } elseif ($TestResult -eq "FAIL") { "[FAIL]" } else { "[?]" }
 $newTitle    = "$resultEmoji Test Execution - $TestScope - $DeviceName"
@@ -157,7 +157,7 @@ try {
   Write-Host "Warning: Title update failed - $($_.Exception.Message)"
 }
 
-# ─── 4. Pièce jointe : rapport HTML ───────────────────────────────────────────
+# ─── 4. Attachment: HTML report ───────────────────────────────────────────────
 Write-Host "`n[4/6] Attaching HTML report..."
 $htmlPath = "$ReportPath/index.html"
 if (Test-Path $htmlPath) {
@@ -173,7 +173,7 @@ if (Test-Path $htmlPath) {
   Write-Host "HTML report not found at $htmlPath"
 }
 
-# ─── 5. Lien GitHub Actions ───────────────────────────────────────────────────
+# ─── 5. GitHub Actions link ────────────────────────────────────────────────────
 Write-Host "`n[5/6] Adding GitHub Actions link..."
 $ghLinkBody = @{
   object = @{
@@ -193,7 +193,7 @@ try {
   Write-Host "Warning: GitHub link failed - $($_.Exception.Message)"
 }
 
-# ─── 6. Lien BrowserStack (optionnel) ─────────────────────────────────────────
+# ─── 6. BrowserStack link (optional) ──────────────────────────────────────────
 if ($BrowserStackBuildUrl -and $BrowserStackBuildUrl -ne "") {
   Write-Host "`n[6/6] Adding BrowserStack link..."
   $bsLinkBody = @{

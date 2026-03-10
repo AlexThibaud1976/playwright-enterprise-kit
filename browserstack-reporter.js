@@ -1,8 +1,8 @@
 /**
- * Playwright Enterprise Kit - Reporter BrowserStack personnalisé
+ * Playwright Enterprise Kit - Custom BrowserStack Reporter
  *
- * Affiche un résumé de l'exécution dans la console avec la configuration utilisée
- * et le lien vers le dashboard BrowserStack.
+ * Displays an execution summary in the console with the configuration used
+ * and the link to the BrowserStack dashboard.
  */
 
 class BrowserStackReporter {
