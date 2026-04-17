@@ -12,9 +12,6 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
 
-  /* Execution order */
-  testOrder: 'file',
-
   /* Disable parallelism by default (enable as needed) */
   fullyParallel: false,
 
