@@ -7,6 +7,11 @@ name: Playwright Tests
 #   - workflow_dispatch : exécution manuelle avec paramètres (BrowserStack)
 #   - push/PR sur main  : exécution locale (chromium headless)
 #
+# ⚠️  Le job test-local ne s'exécute que si la variable de repo BASE_URL est
+#     définie (Settings > Secrets and variables > Actions > Variables).
+#     Sans cible réelle à tester, le job est skippé — un template cloné sans
+#     configuration reste ainsi au vert. Skipped = succès pour les checks requis.
+#
 # Secrets requis (Settings > Secrets and variables > Actions) :
 #   Jira/Xray :
 #     JIRA_URL, JIRA_USER, JIRA_API_TOKEN
@@ -33,9 +38,6 @@ on:
       issueKey:
         description: "Jira Test Plan Key (ex: PROJ-100)"
         required: true
-      summary:
-        description: "Description de l'exécution (optionnel)"
-        required: false
       os:
         description: "Système d'exploitation"
         required: true
@@ -92,9 +94,14 @@ env:
 jobs:
   # ============================================================================
   # CI locale - Push / PR (sans BrowserStack)
+  #
+  # Ne s'exécute que si la variable de repo BASE_URL est définie : le kit est
+  # un template, il n'y a pas d'application à tester tant que l'utilisateur
+  # n'a pas fourni sa cible. Le run est limité au project chromium, en
+  # cohérence avec l'installation navigateur ci-dessous.
   # ============================================================================
   test-local:
-    if: ${{ github.event_name != 'workflow_dispatch' }}
+    if: ${{ github.event_name != 'workflow_dispatch' && vars.BASE_URL != '' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
@@ -114,9 +121,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run tests
-        run: npx playwright test
+        run: npx playwright test --project=chromium
         env:
-          BASE_URL: ${{ vars.BASE_URL || 'http://localhost:3000' }}
+          BASE_URL: ${{ vars.BASE_URL }}
           CI: true
 
       - name: Upload Playwright report
@@ -146,12 +153,20 @@ jobs:
 
       - name: Validate & resolve BrowserStack configuration
         shell: bash
+        # Inputs passed through env (never interpolated into the script body):
+        # ${{ }} expressions are substituted BEFORE the shell parses the script,
+        # so free-text inputs interpolated inline would allow command injection.
+        env:
+          INPUT_OS: ${{ github.event.inputs.os }}
+          INPUT_OS_VERSION: ${{ github.event.inputs.osVersion }}
+          INPUT_BROWSER: ${{ github.event.inputs.browser }}
+          INPUT_BROWSER_VERSION: ${{ github.event.inputs.browserVersion }}
         run: |
           node scripts/resolve-browserstack-config.js \
-            --os "${{ github.event.inputs.os }}" \
-            --osVersion "${{ github.event.inputs.osVersion }}" \
-            --browser "${{ github.event.inputs.browser }}" \
-            --browserVersion "${{ github.event.inputs.browserVersion }}"
+            --os "$INPUT_OS" \
+            --osVersion "$INPUT_OS_VERSION" \
+            --browser "$INPUT_BROWSER" \
+            --browserVersion "$INPUT_BROWSER_VERSION"
 
       - name: Install dependencies
         run: npm ci
@@ -251,8 +266,10 @@ jobs:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
+          # Free-text input passed through env to prevent pwsh command injection
+          INPUT_ISSUE_KEY: ${{ github.event.inputs.issueKey }}
         run: |
-          ./scripts/upload-xray.ps1 -IssueKey "${{ github.event.inputs.issueKey }}"
+          ./scripts/upload-xray.ps1 -IssueKey $env:INPUT_ISSUE_KEY
 
       # ──────────────────────────────────────────────────────────────────────
       # Déterminer le résultat depuis le XML
