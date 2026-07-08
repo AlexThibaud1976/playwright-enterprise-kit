@@ -42,7 +42,7 @@
 const https = require('https');
 const { URL } = require('url');
 
-// ── CLI argument parsing ────────────────────────────────────────────────────
+// ── CLI argument parsing ──────────────────────────────────────────────────
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -150,9 +150,19 @@ function request(method, path, body) {
   });
 }
 
-// ── Confluence Storage Format builders ──────────────────────────────────────
+// ── Confluence Storage Format builders ────────────────────────────────────
 
 const MAX_ROWS = 50;
+
+/**
+ * Escapes a value for safe insertion into Confluence storage format (XHTML).
+ * Prevents HTML/macro injection through CLI arguments or environment values.
+ */
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
 
 function buildResultBadge(result) {
   if (result === 'PASS') {
@@ -167,28 +177,28 @@ function buildResultBadge(result) {
 function buildJiraLink(key) {
   if (!key) return '-';
   const jiraUrl = process.env.JIRA_URL || config.confluenceUrl.replace('/wiki', '');
-  return `<a href="${jiraUrl}/browse/${key}">${key}</a>`;
+  return `<a href="${escapeHtml(jiraUrl)}/browse/${encodeURIComponent(key)}">${escapeHtml(key)}</a>`;
 }
 
 function buildGitHubActionsLink() {
   if (!reportData.repository || !reportData.runId) return '-';
-  const url = `https://github.com/${reportData.repository}/actions/runs/${reportData.runId}`;
-  return `<a href="${url}">#${reportData.runNumber}</a>`;
+  const url = `https://github.com/${encodeURI(reportData.repository)}/actions/runs/${encodeURIComponent(reportData.runId)}`;
+  return `<a href="${escapeHtml(url)}">#${escapeHtml(reportData.runNumber)}</a>`;
 }
 
 function buildBrowserStackLink() {
   if (!reportData.browserstackUrl) return '-';
-  return `<a href="${reportData.browserstackUrl}">Build</a>`;
+  return `<a href="${escapeHtml(reportData.browserstackUrl)}">Build</a>`;
 }
 
 function buildNewRow() {
   return [
     `<tr>`,
-    `<td>${reportData.date} ${reportData.time}</td>`,
+    `<td>${escapeHtml(reportData.date)} ${escapeHtml(reportData.time)}</td>`,
     `<td>${buildResultBadge(reportData.testResult)}</td>`,
-    `<td>${reportData.testScope}</td>`,
-    `<td>${reportData.os} ${reportData.osVersion}</td>`,
-    `<td>${reportData.browser} ${reportData.browserVersion}</td>`,
+    `<td>${escapeHtml(reportData.testScope)}</td>`,
+    `<td>${escapeHtml(reportData.os)} ${escapeHtml(reportData.osVersion)}</td>`,
+    `<td>${escapeHtml(reportData.browser)} ${escapeHtml(reportData.browserVersion)}</td>`,
     `<td>${buildJiraLink(reportData.execKey)}</td>`,
     `<td>${buildGitHubActionsLink()}</td>`,
     `<td>${buildBrowserStackLink()}</td>`,
@@ -311,7 +321,7 @@ async function updatePage(pageId, currentVersion, newContent) {
   });
 }
 
-// ── Main ────────────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
   validateConfig();
