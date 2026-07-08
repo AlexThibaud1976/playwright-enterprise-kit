@@ -7,6 +7,11 @@ name: Playwright Tests
 #   - workflow_dispatch : exécution manuelle avec paramètres (BrowserStack)
 #   - push/PR sur main  : exécution locale (chromium headless)
 #
+# ⚠️  Le job test-local ne s'exécute que si la variable de repo BASE_URL est
+#     définie (Settings > Secrets and variables > Actions > Variables).
+#     Sans cible réelle à tester, le job est skippé — un template cloné sans
+#     configuration reste ainsi au vert. Skipped = succès pour les checks requis.
+#
 # Secrets requis (Settings > Secrets and variables > Actions) :
 #   Jira/Xray :
 #     JIRA_URL, JIRA_USER, JIRA_API_TOKEN
@@ -92,9 +97,14 @@ env:
 jobs:
   # ============================================================================
   # CI locale - Push / PR (sans BrowserStack)
+  #
+  # Ne s'exécute que si la variable de repo BASE_URL est définie : le kit est
+  # un template, il n'y a pas d'application à tester tant que l'utilisateur
+  # n'a pas fourni sa cible. Le run est limité au project chromium, en
+  # cohérence avec l'installation navigateur ci-dessous.
   # ============================================================================
   test-local:
-    if: ${{ github.event_name != 'workflow_dispatch' }}
+    if: ${{ github.event_name != 'workflow_dispatch' && vars.BASE_URL != '' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
@@ -114,9 +124,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run tests
-        run: npx playwright test
+        run: npx playwright test --project=chromium
         env:
-          BASE_URL: ${{ vars.BASE_URL || 'http://localhost:3000' }}
+          BASE_URL: ${{ vars.BASE_URL }}
           CI: true
 
       - name: Upload Playwright report
