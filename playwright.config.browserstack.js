@@ -10,7 +10,6 @@ const bsConfig = require('./browserstack.config');
 
 module.exports = defineConfig({
   testDir: './tests',
-  testOrder: 'file',
   fullyParallel: !bsConfig.runInOrder,
   forbidOnly: !!process.env.CI,
   retries: bsConfig.retries,
