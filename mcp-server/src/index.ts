@@ -9,7 +9,7 @@ import { PEK_ROOT } from "./constants.js";
 
 const server = new McpServer({
   name: "pek-mcp-server",
-  version: "0.1.0",
+  version: "0.1.1",
 });
 
 registerTestTools(server);

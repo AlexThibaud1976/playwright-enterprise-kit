@@ -13,6 +13,12 @@ export interface ExecResult {
  * Runs a command from the kit root and captures stdout/stderr.
  * Never throws on non-zero exit codes: callers decide how to report failure,
  * which lets tools return actionable error messages instead of raw exceptions.
+ *
+ * Security note: the shell is NEVER used (shell: false on every platform).
+ * With shell: true on Windows, spawn re-joins array arguments without safe
+ * quoting, which turns any argument containing shell metacharacters into a
+ * command injection vector. All executables invoked here ("node") resolve
+ * fine through PATH without a shell on Windows, macOS and Linux.
  */
 export function runCommand(
   command: string,
@@ -34,7 +40,8 @@ export function runCommand(
     const child = spawn(command, args, {
       cwd,
       env,
-      shell: process.platform === "win32", // npx/node resolution on Windows
+      shell: false,
+      windowsHide: true,
     });
 
     const timer = setTimeout(() => {

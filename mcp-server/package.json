@@ -1,6 +1,6 @@
 {
   "name": "pek-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server exposing the Playwright Enterprise Kit workflows (Playwright runs, BrowserStack, Xray, Confluence) as tools for MCP clients such as Claude Code / Claude Desktop.",
   "type": "module",
   "main": "dist/index.js",

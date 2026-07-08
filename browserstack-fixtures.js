@@ -6,8 +6,6 @@
  * - BS mode       : a BrowserStack session is created per test (desktop or mobile).
  *
  * Usage in a test:
- *   const { test, expect } = require('../fixtures/test-fixtures');
- *   // or if importing directly from the root:
  *   const { test, expect } = require('../test-fixtures');
  */
 

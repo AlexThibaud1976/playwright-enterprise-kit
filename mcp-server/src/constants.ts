@@ -21,6 +21,26 @@ export const DEFAULT_RUN_TIMEOUT_S = 900;
 /** Default Xray Cloud endpoint. */
 export const DEFAULT_XRAY_ENDPOINT = "xray.cloud.getxray.app";
 
+/**
+ * Whitelist for the extraEnv tool parameter. Without it, a caller could set
+ * NODE_OPTIONS, PATH or similar and turn a test run into arbitrary code
+ * execution. Only kit-relevant variables are allowed through.
+ */
+export const ALLOWED_EXTRA_ENV = /^(BS_[A-Z0-9_]+|DEVICE_NAME|BASE_URL|HEADLESS|TEST_TIMEOUT|BROWSERSTACK_BUILD_NAME)$/;
+
+export function filterExtraEnv(extraEnv: Record<string, string> | undefined): {
+  env: Record<string, string>;
+  rejected: string[];
+} {
+  const env: Record<string, string> = {};
+  const rejected: string[] = [];
+  for (const [key, value] of Object.entries(extraEnv ?? {})) {
+    if (ALLOWED_EXTRA_ENV.test(key)) env[key] = value;
+    else rejected.push(key);
+  }
+  return { env, rejected };
+}
+
 export function truncate(text: string, limit: number = CHARACTER_LIMIT): string {
   if (text.length <= limit) return text;
   return (

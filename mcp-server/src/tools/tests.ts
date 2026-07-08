@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runCommand } from "../services/exec.js";
-import { DEFAULT_RUN_TIMEOUT_S, PEK_ROOT, truncate } from "../constants.js";
+import { DEFAULT_RUN_TIMEOUT_S, PEK_ROOT, filterExtraEnv, truncate } from "../constants.js";
 
 interface RunSummary {
   passed: number;
@@ -43,7 +43,7 @@ Args:
   - project (string, optional): Playwright project name (--project)
   - config (string, optional): alternate config file, e.g. "playwright.config.browserstack.js"
   - headed (boolean, default false): run with a visible browser
-  - extraEnv (record<string,string>, optional): extra environment variables (e.g. BS_* values from pek_resolve_browserstack_config)
+  - extraEnv (record<string,string>, optional): extra environment variables. Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and BROWSERSTACK_BUILD_NAME are accepted (e.g. BS_* values from pek_resolve_browserstack_config)
   - timeoutSeconds (number, default ${DEFAULT_RUN_TIMEOUT_S}): kill the run after this delay
 
 Returns: { exitCode, passed, failed, flaky, skipped, durationMs, timedOut, outputTail }
@@ -56,7 +56,7 @@ Note: BrowserStack runs can be long; raise timeoutSeconds for large campaigns.`,
         project: z.string().min(1).optional().describe("Playwright project name"),
         config: z.string().min(1).optional().describe("Alternate playwright config file"),
         headed: z.boolean().default(false).describe("Run headed browsers"),
-        extraEnv: z.record(z.string()).optional().describe("Extra environment variables for the run"),
+        extraEnv: z.record(z.string()).optional().describe("Extra environment variables for the run (whitelisted keys only)"),
         timeoutSeconds: z
           .number()
           .int()
@@ -73,16 +73,52 @@ Note: BrowserStack runs can be long; raise timeoutSeconds for large campaigns.`,
       },
     },
     async ({ grep, testPath, project, config, headed, extraEnv, timeoutSeconds }) => {
-      const args = ["playwright", "test"];
+      // extraEnv whitelist: prevents NODE_OPTIONS / PATH style overrides that
+      // would turn a test run into arbitrary code execution.
+      const { env: safeExtraEnv, rejected } = filterExtraEnv(extraEnv);
+      if (rejected.length > 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Rejected extraEnv keys: ${rejected.join(", ")}. ` +
+                "Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and " +
+                "BROWSERSTACK_BUILD_NAME are allowed.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Invoke the Playwright CLI directly through node (cross-platform,
+      // no shell involved) instead of npx, which would require shell: true
+      // on Windows and reopen an injection vector.
+      const cliPath = path.join(PEK_ROOT, "node_modules", "playwright", "cli.js");
+      if (!fs.existsSync(cliPath)) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Playwright CLI not found at ${cliPath}. ` +
+                "Run 'npm install' at the kit root first.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const args = [cliPath, "test"];
       if (testPath) args.push(testPath);
       if (grep) args.push("--grep", grep);
       if (project) args.push("--project", project);
       if (config) args.push(`--config=${config}`);
       if (headed) args.push("--headed");
 
-      const result = await runCommand("npx", args, {
+      const result = await runCommand("node", args, {
         timeoutMs: timeoutSeconds * 1000,
-        env: { ...process.env, ...extraEnv },
+        env: { ...process.env, ...safeExtraEnv },
       });
 
       const combined = result.stdout + "\n" + result.stderr;

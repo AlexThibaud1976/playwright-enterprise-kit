@@ -58,7 +58,8 @@ module.exports = {
   projectName: process.env.BS_PROJECT_NAME || 'Playwright Enterprise Kit',
   testObservability: true,
   capabilities,
-  workers: runInOrder ? 5 : requestedWorkers,
+  // Sequential mode = 1 worker; otherwise honour BS_WORKERS
+  workers: runInOrder ? 1 : requestedWorkers,
   timeout: 90000,
   retries: 0,
 };
