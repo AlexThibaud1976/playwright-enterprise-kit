@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runCommand } from "../services/exec.js";
-import { truncate } from "../constants.js";
+import { filterExtraEnv, truncate } from "../constants.js";
 
 export function registerConfluenceTools(server: McpServer): void {
   server.registerTool(
@@ -15,7 +15,7 @@ Args:
   - testResult ('PASS' | 'FAIL' | 'UNKNOWN'): overall run result
   - testScope (string, default "All Tests"): human-readable scope label
   - browserstackUrl (string, optional): BrowserStack build URL (from pek_get_browserstack_build_link)
-  - extraEnv (record<string,string>, optional): device context (DEVICE_NAME, BS_OS, BS_OS_VERSION, BS_BROWSER, BS_BROWSER_VERSION) shown in the dashboard row
+  - extraEnv (record<string,string>, optional): device context (DEVICE_NAME, BS_OS, BS_OS_VERSION, BS_BROWSER, BS_BROWSER_VERSION) shown in the dashboard row. Whitelisted keys only.
 
 Returns: { pageUrl } of the updated dashboard.
 
@@ -34,7 +34,7 @@ Modifies a Confluence page on every call (adds a new history row).`,
         extraEnv: z
           .record(z.string())
           .optional()
-          .describe("Device context env vars (DEVICE_NAME, BS_OS, ...)"),
+          .describe("Device context env vars (DEVICE_NAME, BS_OS, ...), whitelisted keys only"),
       },
       annotations: {
         readOnlyHint: false,
@@ -44,6 +44,22 @@ Modifies a Confluence page on every call (adds a new history row).`,
       },
     },
     async ({ execKey, testResult, testScope, browserstackUrl, extraEnv }) => {
+      const { env: safeExtraEnv, rejected } = filterExtraEnv(extraEnv);
+      if (rejected.length > 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Rejected extraEnv keys: ${rejected.join(", ")}. ` +
+                "Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and " +
+                "BROWSERSTACK_BUILD_NAME are allowed.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const args = [
         "scripts/update-confluence-report.js",
         "--test-result",
@@ -56,7 +72,7 @@ Modifies a Confluence page on every call (adds a new history row).`,
 
       const result = await runCommand("node", args, {
         timeoutMs: 60_000,
-        env: { ...process.env, ...extraEnv },
+        env: { ...process.env, ...safeExtraEnv },
       });
 
       const combined = result.stdout + "\n" + result.stderr;
