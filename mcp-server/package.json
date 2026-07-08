@@ -1,0 +1,36 @@
+{
+  "name": "pek-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server exposing the Playwright Enterprise Kit workflows (Playwright runs, BrowserStack, Xray, Confluence) as tools for MCP clients such as Claude Code / Claude Desktop.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pek-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "playwright",
+    "xray",
+    "browserstack",
+    "confluence"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
