@@ -17,5 +17,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "playwright-report", "test-results"]
+  "exclude": ["node_modules", "dist", "playwright-report", "test-results", "mcp-server"]
 }
