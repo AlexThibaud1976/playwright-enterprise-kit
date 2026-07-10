@@ -9,6 +9,7 @@ Enterprise-ready Playwright framework, ready to use and distributable across all
 - GitHub Actions (parameterized workflow with visual summary)
 - TypeScript + POM (Page Object Model)
 - Automatic evidence (screenshots attached to Xray reports)
+- MCP server (drive the whole pipeline in natural language from Claude Code / Claude Desktop)
 
 ---
 
@@ -18,7 +19,14 @@ Enterprise-ready Playwright framework, ready to use and distributable across all
 playwright-enterprise-kit/
 ├── .github/
 │   └── workflows/
-│       └── playwright.yml          # Parameterized CI/CD (BrowserStack + Jira + Confluence)
+│       ├── playwright.yml          # Parameterized CI/CD (BrowserStack + Jira + Confluence)
+│       └── ci-check.yml            # PR checks (typecheck + MCP server build)
+├── docs/
+│   ├── mcp-server-user-guide.md    # MCP server user guide (EN)
+│   └── mcp-server-user-guide-fr.md # Guide utilisateur du serveur MCP (FR)
+├── mcp-server/                     # MCP server: the kit as AI-drivable tools
+│   ├── src/                        # TypeScript sources (6 pek_* tools)
+│   └── README.md                   # Short setup guide
 ├── pages/
 │   └── base.page.ts               # Base class for your Page Objects
 ├── scripts/
@@ -299,6 +307,40 @@ Enable `confluenceReport: true` when triggering the workflow.
 The Confluence page is created automatically if it does not exist, and updated with a new row after each run.
 
 Columns: Date | Result | Scope | OS | Browser | Jira Test Execution | GitHub | BrowserStack
+
+---
+
+## MCP Server — drive the kit in natural language
+
+The kit ships with an **MCP (Model Context Protocol) server** that exposes the whole pipeline as tools for AI assistants — Claude Code, Claude Desktop, or any MCP-compatible client. One prompt chains the full workflow:
+
+> *"Run the smoke tests on Chrome latest / Windows 11 via BrowserStack, upload the results to Xray under Test Plan MYPROJECT-100 and update the Confluence dashboard."*
+
+| Tool | Purpose |
+|---|---|
+| `pek_run_tests` | Run the Playwright suite (config reporters preserved) |
+| `pek_get_last_run_summary` | Inspect last-run artefacts (read-only) |
+| `pek_resolve_browserstack_config` | Validate an OS/browser combo via the BrowserStack API |
+| `pek_get_browserstack_build_link` | Find the Automate dashboard URL for a build |
+| `pek_upload_to_xray` | Create a Jira Test Execution from JUnit results |
+| `pek_update_confluence_report` | Append a row to the Confluence dashboard |
+
+### Quick start
+
+```bash
+cd mcp-server
+npm install
+npm run build
+```
+
+Then declare the server in your MCP client (`.mcp.json` for Claude Code, `claude_desktop_config.json` for Claude Desktop — full examples in the guides below).
+
+Design principles: the existing kit scripts remain the **single source of truth** (the server wraps them), and **credentials never transit through the model** — they live in the MCP client configuration or your shell environment.
+
+**Full documentation:**
+- 🇬🇧 [MCP Server User Guide](docs/mcp-server-user-guide.md)
+- 🇫🇷 [Guide utilisateur du serveur MCP](docs/mcp-server-user-guide-fr.md)
+- Short version: [mcp-server/README.md](mcp-server/README.md)
 
 ---
 
