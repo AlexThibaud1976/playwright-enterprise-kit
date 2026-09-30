@@ -56,7 +56,7 @@ Note: BrowserStack runs can be long; raise timeoutSeconds for large campaigns.`,
         project: z.string().min(1).optional().describe("Playwright project name"),
         config: z.string().min(1).optional().describe("Alternate playwright config file"),
         headed: z.boolean().default(false).describe("Run headed browsers"),
-        extraEnv: z.record(z.string()).optional().describe("Extra environment variables for the run (whitelisted keys only)"),
+        extraEnv: z.record(z.string(), z.string()).optional().describe("Extra environment variables for the run (whitelisted keys only)"),
         timeoutSeconds: z
           .number()
           .int()
