@@ -11,7 +11,10 @@
  *   - test.afterEach for cleanup
  */
 
-import { test, expect } from '@playwright/test';
+// Use the kit fixtures (not @playwright/test directly) so the same test runs
+// locally or on BrowserStack depending on the credentials present.
+import { test, expect } from '../../test-fixtures';
+import type { Page } from '@playwright/test';
 import { generateUserData, captureEvidence } from '../../utils/helpers';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -19,7 +22,7 @@ import { generateUserData, captureEvidence } from '../../utils/helpers';
 // ──────────────────────────────────────────────────────────────────────────────
 
 class LoginPage {
-  constructor(private page: import('@playwright/test').Page) {}
+  constructor(private page: Page) {}
 
   // Selectors — adapt to your application
   get emailInput() { return this.page.locator('input[name="email"], input[type="email"], #email'); }

@@ -6,7 +6,8 @@
  * - Otherwise → standard Playwright fixtures
  *
  * Usage in your tests:
- *   const { test, expect } = require('../../test-fixtures');
+ *   import { test, expect } from '../../test-fixtures';        // TypeScript
+ *   const { test, expect } = require('../../test-fixtures');   // JavaScript
  */
 
 const base = require('@playwright/test');

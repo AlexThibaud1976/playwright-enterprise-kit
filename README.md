@@ -243,7 +243,9 @@ export class LoginPage extends BasePage {
 
 ```typescript
 // tests/auth/login.spec.ts
-import { test, expect } from '@playwright/test';
+// Import from test-fixtures (not @playwright/test) so the test runs
+// locally or on BrowserStack depending on the credentials present.
+import { test, expect } from '../../test-fixtures';
 import { LoginPage } from '../../pages/login.page';
 import { captureEvidence } from '../../utils/helpers';
 
