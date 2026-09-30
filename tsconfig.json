@@ -3,16 +3,16 @@
     "target": "ES2022",
     "module": "commonjs",
     "lib": ["ES2022"],
+    "types": ["node"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "outDir": "./dist",
-    "baseUrl": ".",
     "paths": {
-      "@utils/*": ["utils/*"],
-      "@pages/*": ["pages/*"]
+      "@utils/*": ["./utils/*"],
+      "@pages/*": ["./pages/*"]
     }
   },
   "include": ["**/*.ts"],

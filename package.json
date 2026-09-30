@@ -33,7 +33,7 @@
     "@xray-app/playwright-junit-reporter": "^0.14.0",
     "browserstack-local": "^1.5.15",
     "playwright": "^1.63.0",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=22"
