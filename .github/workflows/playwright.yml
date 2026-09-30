@@ -61,7 +61,7 @@ on:
           - edge
           - chromium
       browserVersion:
-        description: "Version navigateur (ex: latest, 131)"
+        description: "Version navigateur (ex: latest, latest-1, 140)"
         required: true
         type: string
         default: "latest"
@@ -107,12 +107,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         run: npm ci
@@ -127,7 +127,7 @@ jobs:
           CI: true
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
@@ -144,12 +144,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Validate & resolve BrowserStack configuration
         shell: bash
@@ -157,6 +157,10 @@ jobs:
         # ${{ }} expressions are substituted BEFORE the shell parses the script,
         # so free-text inputs interpolated inline would allow command injection.
         env:
+          # Credentials let the script validate versions against the live
+          # BrowserStack API instead of the local fallback cache.
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           INPUT_OS: ${{ github.event.inputs.os }}
           INPUT_OS_VERSION: ${{ github.event.inputs.osVersion }}
           INPUT_BROWSER: ${{ github.event.inputs.browser }}
@@ -180,8 +184,9 @@ jobs:
       - name: Determine test pattern
         id: test-pattern
         shell: bash
+        env:
+          SCOPE: ${{ github.event.inputs.testScope }}
         run: |
-          SCOPE="${{ github.event.inputs.testScope }}"
           case "$SCOPE" in
             "all")
               echo "pattern=tests/" >> $GITHUB_OUTPUT
@@ -216,8 +221,9 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       - name: Run tests on BrowserStack
         id: run-tests
-        run: npx playwright test ${{ steps.test-pattern.outputs.pattern }} --config=playwright.config.browserstack.js
+        run: npx playwright test "$TEST_PATTERN" --config=playwright.config.browserstack.js
         env:
+          TEST_PATTERN: ${{ steps.test-pattern.outputs.pattern }}
           BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
           BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           BROWSERSTACK_BUILD_NAME: "GitHub Actions #${{ github.run_number }} - ${{ github.ref_name }} - ${{ env.DEVICE_NAME }} - ${{ steps.test-pattern.outputs.description }}"
@@ -244,7 +250,7 @@ jobs:
         run: node scripts/add-timestamps-to-xray-report.js xray-report.xml
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-report-${{ env.DEVICE_NAME || 'run' }}
@@ -300,25 +306,34 @@ jobs:
       - name: Update Jira Test Execution
         if: ${{ always() && steps.xray-upload.outputs.exec_key != '' }}
         shell: pwsh
+        # Values and secrets passed through env (never interpolated into the
+        # script body, and secrets kept off the command line).
         env:
           JIRA_CUSTOM_FIELD_OS: ${{ secrets.JIRA_CUSTOM_FIELD_OS }}
           JIRA_CUSTOM_FIELD_OS_VERSION: ${{ secrets.JIRA_CUSTOM_FIELD_OS_VERSION }}
           JIRA_CUSTOM_FIELD_BROWSER: ${{ secrets.JIRA_CUSTOM_FIELD_BROWSER }}
           JIRA_CUSTOM_FIELD_BROWSER_VERSION: ${{ secrets.JIRA_CUSTOM_FIELD_BROWSER_VERSION }}
           JIRA_CUSTOM_FIELD_TEST_SCOPE: ${{ secrets.JIRA_CUSTOM_FIELD_TEST_SCOPE }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          EXEC_KEY: ${{ steps.xray-upload.outputs.exec_key }}
+          TEST_RESULT: ${{ steps.test-result.outputs.result }}
+          TEST_SCOPE: ${{ steps.test-pattern.outputs.description }}
+          BS_BUILD_URL: ${{ steps.bs-link.outputs.build_url }}
         run: |
           ./scripts/jira-post-execution.ps1 `
-            -ExecKey "${{ steps.xray-upload.outputs.exec_key }}" `
-            -DeviceName "${{ env.DEVICE_NAME }}" `
-            -TestResult "${{ steps.test-result.outputs.result }}" `
-            -TestScope "${{ steps.test-pattern.outputs.description }}" `
-            -JiraUrl "${{ secrets.JIRA_URL }}" `
-            -JiraUser "${{ secrets.JIRA_USER }}" `
-            -JiraApiToken "${{ secrets.JIRA_API_TOKEN }}" `
-            -GitHubRepository "${{ github.repository }}" `
-            -GitHubRunId "${{ github.run_id }}" `
-            -GitHubRunNumber "${{ github.run_number }}" `
-            -BrowserStackBuildUrl "${{ steps.bs-link.outputs.build_url }}"
+            -ExecKey $env:EXEC_KEY `
+            -DeviceName $env:DEVICE_NAME `
+            -TestResult $env:TEST_RESULT `
+            -TestScope $env:TEST_SCOPE `
+            -JiraUrl $env:JIRA_URL `
+            -JiraUser $env:JIRA_USER `
+            -JiraApiToken $env:JIRA_API_TOKEN `
+            -GitHubRepository $env:GITHUB_REPOSITORY `
+            -GitHubRunId $env:GITHUB_RUN_ID `
+            -GitHubRunNumber $env:GITHUB_RUN_NUMBER `
+            -BrowserStackBuildUrl $env:BS_BUILD_URL
 
       # ──────────────────────────────────────────────────────────────────────
       # Rapport Confluence (optionnel, toggle via confluenceReport)
@@ -334,15 +349,19 @@ jobs:
           CONFLUENCE_PAGE_TITLE: ${{ secrets.CONFLUENCE_PAGE_TITLE }}
           CONFLUENCE_PARENT_PAGE_ID: ${{ secrets.CONFLUENCE_PARENT_PAGE_ID }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
+          EXEC_KEY: ${{ steps.xray-upload.outputs.exec_key }}
+          TEST_RESULT: ${{ steps.test-result.outputs.result }}
+          TEST_SCOPE: ${{ steps.test-pattern.outputs.description }}
+          BS_BUILD_URL: ${{ steps.bs-link.outputs.build_url }}
         run: |
           node scripts/update-confluence-report.js \
-            --exec-key "${{ steps.xray-upload.outputs.exec_key }}" \
-            --test-result "${{ steps.test-result.outputs.result }}" \
-            --test-scope "${{ steps.test-pattern.outputs.description }}" \
-            --run-number "${{ github.run_number }}" \
-            --run-id "${{ github.run_id }}" \
-            --repository "${{ github.repository }}" \
-            --browserstack-url "${{ steps.bs-link.outputs.build_url }}"
+            --exec-key "$EXEC_KEY" \
+            --test-result "$TEST_RESULT" \
+            --test-scope "$TEST_SCOPE" \
+            --run-number "$GITHUB_RUN_NUMBER" \
+            --run-id "$GITHUB_RUN_ID" \
+            --repository "$GITHUB_REPOSITORY" \
+            --browserstack-url "$BS_BUILD_URL"
 
       # ──────────────────────────────────────────────────────────────────────
       # Fail le job si des tests ont échoué
@@ -350,8 +369,10 @@ jobs:
       - name: Check test results
         if: always()
         shell: bash
+        env:
+          RUN_OUTCOME: ${{ steps.run-tests.outcome }}
         run: |
-          if [ "${{ steps.run-tests.outcome }}" == "failure" ]; then
+          if [ "$RUN_OUTCOME" == "failure" ]; then
             echo "Tests failed"
             exit 1
           fi
