@@ -5,6 +5,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # @types/node must match the Node.js runtime (Node 24 LTS in CI):
+      # newer majors would type-check APIs that don't exist at runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       playwright:
         patterns: ["@playwright/test", "playwright"]
@@ -15,6 +20,11 @@ updates:
     directory: /mcp-server
     schedule:
       interval: weekly
+    ignore:
+      # @types/node must match the Node.js runtime (Node 24 LTS in CI):
+      # newer majors would type-check APIs that don't exist at runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
