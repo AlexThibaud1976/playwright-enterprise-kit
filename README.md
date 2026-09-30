@@ -21,6 +21,7 @@ playwright-enterprise-kit/
 │   └── workflows/
 │       ├── playwright.yml          # Parameterized CI/CD (BrowserStack + Jira + Confluence)
 │       └── ci-check.yml            # PR checks (typecheck + MCP server build)
+│   └── dependabot.yml              # Weekly dependency / GitHub Actions updates
 ├── docs/
 │   ├── mcp-server-user-guide.md    # MCP server user guide (EN)
 │   └── mcp-server-user-guide-fr.md # Guide utilisateur du serveur MCP (FR)
@@ -49,6 +50,7 @@ playwright-enterprise-kit/
 ├── playwright.config.ts            # Main Playwright configuration
 ├── playwright.config.browserstack.js  # BrowserStack Playwright configuration
 ├── test-fixtures.js                # Auto fixture selector (local / BS)
+├── test-fixtures.d.ts              # Types for test-fixtures.js
 ├── tsconfig.json
 ├── package.json
 ├── .env.example                    # Environment variables template
@@ -64,6 +66,8 @@ playwright-enterprise-kit/
 On GitHub, click **"Use this template"** → **"Create a new repository"**.
 
 ### 2. Clone and install
+
+Requires **Node.js 22+** (the CI runs on Node 24 LTS).
 
 ```bash
 git clone https://github.com/yourorg/your-project-tests.git
@@ -167,9 +171,9 @@ Parameters available when triggering manually:
 |---------------|---------------------------------------|------------------------------|
 | `issueKey`    | Jira Test Plan key                    | `MYPROJECT-100`             |
 | `os`          | Operating system                      | `Windows`, `Mac`            |
-| `osVersion`   | OS version                            | `11`, `Sonoma`, `Sequoia`   |
+| `osVersion`   | OS version                            | `11`, `Sequoia`, `Tahoe`    |
 | `browser`     | Browser                               | `chrome`, `firefox`, `safari`, `edge` |
-| `browserVersion` | Browser version                   | `latest`, `131`             |
+| `browserVersion` | Browser version                   | `latest`, `latest-1`, `140` |
 | `testScope`   | Test scope                            | `all`, `sanity`, `login`    |
 | `confluenceReport` | Publish to Confluence          | `true` / `false`            |
 
