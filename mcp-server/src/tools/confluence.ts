@@ -32,7 +32,7 @@ Modifies a Confluence page on every call (adds a new history row).`,
         testScope: z.string().default("All Tests").describe("Scope label for the dashboard"),
         browserstackUrl: z.string().url().optional().describe("BrowserStack build URL"),
         extraEnv: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .optional()
           .describe("Device context env vars (DEVICE_NAME, BS_OS, ...), whitelisted keys only"),
       },
