@@ -12,8 +12,7 @@
     "baseUrl": ".",
     "paths": {
       "@utils/*": ["utils/*"],
-      "@pages/*": ["pages/*"],
-      "@fixtures/*": ["fixtures/*"]
+      "@pages/*": ["pages/*"]
     }
   },
   "include": ["**/*.ts"],

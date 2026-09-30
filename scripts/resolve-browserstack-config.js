@@ -24,8 +24,11 @@
 
 const fs = require('fs');
 
-// Local fallback cache - used if the BrowserStack API is unreachable
-// Last updated January 27, 2026 - Playwright versions available on BrowserStack
+// Local fallback cache - used if the BrowserStack API is unreachable.
+// OS versions are validated strictly against this list. Browser versions are
+// only indicative: in fallback mode any numeric version is accepted (see
+// validateParams), so a stale list never blocks a recent browser release.
+// Last updated September 30, 2026.
 const FALLBACK_VERSIONS = {
   os: {
     windows: ['7', '8', '8.1', '10', '11'],
@@ -35,7 +38,7 @@ const FALLBACK_VERSIONS = {
     chrome: ['latest', 'latest-1', 'latest-2', '131', '130', '129', '128'],
     chromium: ['latest', 'latest-1', 'latest-2', '131', '130', '129', '128'],
     firefox: ['latest', 'latest-1', 'latest-2', '133', '132', '131', '130'],
-    safari: ['latest', '18', '17', '16', '15'],
+    safari: ['latest', '26', '18', '17', '16'],
     edge: ['latest', 'latest-1', 'latest-2', '131', '130', '129', '128'],
   },
 };
@@ -220,6 +223,7 @@ async function validateParams(params) {
   const capabilities = await fetchBrowserStackCapabilities();
 
   let availableOsVersions, availableBrowserVersions;
+  let usingFallback = false;
 
   if (capabilities) {
     console.log('✅ Versions retrieved from BrowserStack API');
@@ -228,6 +232,7 @@ async function validateParams(params) {
     availableBrowserVersions = extracted.browserVersions;
   } else {
     // Fallback to local cache
+    usingFallback = true;
     availableOsVersions = FALLBACK_VERSIONS.os[osKey] || [];
     availableBrowserVersions = FALLBACK_VERSIONS.browsers[browserKey] || [];
   }
@@ -241,6 +246,18 @@ async function validateParams(params) {
     errors.push(
       `OS version '${params.osVersion}' not available for ${params.os}.\n   Available versions: ${versionsDisplay}`
     );
+  }
+
+  // Without the API the cached browser list goes stale quickly: accept any
+  // numeric version and let BrowserStack reject it at session start if needed.
+  const isNumericVersion = /^\d{1,3}(\.\d+)?$/.test(params.browserVersion);
+  if (usingFallback && !isLatestPattern && isNumericVersion) {
+    if (!availableBrowserVersions.includes(params.browserVersion)) {
+      console.warn(
+        `⚠️  Browser version '${params.browserVersion}' not in local cache - accepted without API validation`
+      );
+    }
+    return errors;
   }
 
   // Browser version validation (unless "latest" pattern)

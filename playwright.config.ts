@@ -18,7 +18,7 @@ export default defineConfig({
   /* Forbid .only() in CI */
   forbidOnly: !!process.env.CI,
 
-  /* Retries automatiques en CI */
+  /* Automatic retries in CI */
   retries: process.env.CI ? 2 : 0,
 
   /* Number of workers */
@@ -34,8 +34,8 @@ export default defineConfig({
       embedTestrunAnnotationsAsItemProperties: true,
       embedAttachmentsAsProperty: 'testrun_evidence',
       textContentAnnotations: ['test_description', 'testrun_comment'],
-      // Exclude test_key to avoid errors when tests do not yet exist in Jira
-      annotationsToExclude: ['test_key'],
+      // test_key entries for tests not yet in Jira are stripped before upload
+      // by scripts/remove-test-keys.js (called from upload-xray.ps1).
     }],
     // GitHub Actions visual summary (auto-enabled in CI)
     ...(process.env.GITHUB_ACTIONS
@@ -60,7 +60,7 @@ export default defineConfig({
     },
     video: 'retain-on-failure',
 
-    /* Mode headless */
+    /* Headless mode */
     headless: process.env.HEADLESS !== 'false',
   },
 
@@ -70,7 +70,7 @@ export default defineConfig({
     timeout: 10000,
   },
 
-  /* Projets (navigateurs) */
+  /* Projects (browsers) */
   projects: [
     {
       name: 'chromium',

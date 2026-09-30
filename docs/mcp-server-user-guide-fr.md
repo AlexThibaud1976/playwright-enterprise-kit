@@ -116,7 +116,7 @@ mcp-server/
 
 | Prérequis | Minimum | Remarques |
 |---|---|---|
-| Node.js | 18+ | `fetch` natif et `AbortSignal.timeout` sont utilisés ; LTS 20/22 recommandée |
+| Node.js | 20+ | `fetch` natif et `AbortSignal.timeout` sont utilisés ; LTS 22/24 recommandée |
 | Playwright Enterprise Kit | ce dépôt, `npm install` fait à la racine | Le serveur lance `npx playwright test` depuis la racine du kit |
 | Un client MCP | Claude Code, Claude Desktop ou MCP Inspector | Tout client MCP stdio fonctionne |
 | Compte BrowserStack | — | Uniquement pour les deux tools BrowserStack et les runs BrowserStack |

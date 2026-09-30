@@ -8,7 +8,9 @@
  *   test.info().annotations.push({ type: 'test_key', value: 'PROJ-42' });
  */
 
-import { test, expect } from '@playwright/test';
+// Use the kit fixtures (not @playwright/test directly) so the same test runs
+// locally or on BrowserStack depending on the credentials present.
+import { test, expect } from '../../test-fixtures';
 import { captureEvidence } from '../../utils/helpers';
 
 test.describe('Sanity - Framework health check', () => {
