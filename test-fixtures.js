@@ -1,20 +1,21 @@
 /**
  * Playwright Enterprise Kit - Fixture selector
  *
- * Automatically selects fixtures based on the environment:
- * - If BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY are defined → BrowserStack fixtures
- * - Otherwise → standard Playwright fixtures
+ * Picks the fixtures of the active execution grid (see integrations/index.js):
+ * - PEK_GRID / pek.config.js `grid` when set explicitly
+ * - otherwise 'auto': BrowserStack if BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY
+ *   are defined, then LambdaTest (LT_USERNAME / LT_ACCESS_KEY), then a remote
+ *   Playwright server (PEK_WS_ENDPOINT), else standard local Playwright fixtures.
+ *
+ * Without any of these variables the behaviour is exactly the historical one:
+ * BrowserStack credentials -> BrowserStack fixtures, none -> @playwright/test.
  *
  * Usage in your tests:
  *   import { test, expect } from '../../test-fixtures';        // TypeScript
  *   const { test, expect } = require('../../test-fixtures');   // JavaScript
  */
 
-const base = require('@playwright/test');
-const bsFixtures = require('./browserstack-fixtures');
+const { resolveGrid } = require('./integrations');
 
-if (process.env.BROWSERSTACK_USERNAME && process.env.BROWSERSTACK_ACCESS_KEY) {
-  module.exports = bsFixtures;
-} else {
-  module.exports = { test: base.test, expect: base.expect };
-}
+const grid = resolveGrid();
+module.exports = grid.createFixtures();

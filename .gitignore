@@ -30,3 +30,8 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# ── Playwright Enterprise Kit ────────────────────────────────────────────────
+run-result.json
+# Unit-test fixtures (the *.xml rule above would otherwise drop them)
+!integrations/__tests__/*.xml

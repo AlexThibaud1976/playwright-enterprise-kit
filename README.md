@@ -2,6 +2,8 @@
 
 Enterprise-ready Playwright framework, ready to use and distributable across all teams.
 
+**Works standalone, connects to anything.** With no account at all the kit runs on local browsers and produces HTML, JUnit and JSON reports. Every integration switches on by itself as soon as its credentials are present — and you can plug in any other tool without touching the existing code.
+
 **Included out-of-the-box:**
 - Jira/Xray (results upload, automatic Test Execution creation)
 - BrowserStack (desktop + mobile, dynamic OS/browser selection)
@@ -11,6 +13,15 @@ Enterprise-ready Playwright framework, ready to use and distributable across all
 - Automatic evidence (screenshots attached to Xray reports)
 - MCP server (drive the whole pipeline in natural language from Claude Code / Claude Desktop)
 
+**Optional integrations** ([operating guide](docs/integrations.md) · [mode opératoire FR](docs/integrations-fr.md)):
+
+| Kind | Providers |
+|---|---|
+| Execution grid | local (default), BrowserStack, LambdaTest, any Playwright server (Docker, Browserless, Moon…) |
+| Test management | Xray, Zephyr Scale, TestRail, Qase |
+| Notifications / dashboards | GitHub job summary, Confluence, Slack, Microsoft Teams, generic webhook (n8n, Zapier, Power Automate…) |
+| Your own tool | one small plugin file — see [Connecting any other system](docs/integrations.md#11-connecting-any-other-system-write-your-own-provider) |
+
 ---
 
 ## Project structure
@@ -19,14 +30,24 @@ Enterprise-ready Playwright framework, ready to use and distributable across all
 playwright-enterprise-kit/
 ├── .github/
 │   └── workflows/
-│       ├── playwright.yml          # Parameterized CI/CD (BrowserStack + Jira + Confluence)
-│       └── ci-check.yml            # PR checks (typecheck + MCP server build)
+│       ├── playwright.yml          # Parameterized CI/CD (local / BrowserStack / LambdaTest + integrations)
+│       └── ci-check.yml            # PR checks (typecheck, unit tests, standalone smoke, MCP build)
 │   └── dependabot.yml              # Weekly dependency / GitHub Actions updates
+├── demo-site/                      # Tiny demo app to try the kit without any application
 ├── docs/
+│   ├── integrations.md             # Integrations operating guide (EN)
+│   ├── integrations-fr.md          # Mode opératoire des intégrations (FR)
 │   ├── mcp-server-user-guide.md    # MCP server user guide (EN)
 │   └── mcp-server-user-guide-fr.md # Guide utilisateur du serveur MCP (FR)
+├── integrations/                   # Pluggable providers (grids, test management, publishers)
+│   ├── index.js                    # Registry: selection, auto-detection, plugins
+│   ├── grids/                      # local, browserstack, lambdatest, remote
+│   ├── test-management/            # xray, zephyr-scale, testrail, qase
+│   ├── publishers/                 # github-summary, confluence, slack, teams, webhook
+│   ├── lib/                        # run-result.json builder, publication engine, HTTP helper
+│   └── _template/                  # Starting point for your own provider
 ├── mcp-server/                     # MCP server: the kit as AI-drivable tools
-│   ├── src/                        # TypeScript sources (6 pek_* tools)
+│   ├── src/                        # TypeScript sources (8 pek_* tools)
 │   └── README.md                   # Short setup guide
 ├── pages/
 │   └── base.page.ts               # Base class for your Page Objects
@@ -37,7 +58,10 @@ playwright-enterprise-kit/
 │   ├── resolve-browserstack-config.js  # Validate BrowserStack configuration
 │   ├── get-browserstack-build-link.js  # Retrieve BrowserStack build link
 │   ├── add-timestamps-to-xray-report.js # Post-process Xray XML report
-│   └── remove-test-keys.js         # Remove orphan test_keys
+│   ├── remove-test-keys.js         # Remove orphan test_keys
+│   ├── pek-publish.js              # Publish the last run to every active integration
+│   ├── pek-doctor.js               # Show which integrations are configured / active
+│   └── demo-server.js              # Static server for demo-site/
 ├── tests/
 │   └── example/
 │       ├── 01-sanity.spec.ts       # Sanity test (health check)
@@ -49,7 +73,10 @@ playwright-enterprise-kit/
 ├── browserstack-reporter.js        # Custom BrowserStack reporter
 ├── playwright.config.ts            # Main Playwright configuration
 ├── playwright.config.browserstack.js  # BrowserStack Playwright configuration
-├── test-fixtures.js                # Auto fixture selector (local / BS)
+├── playwright.config.grid.js       # Generic cloud grid configuration (LambdaTest...)
+├── playwright.config.demo.ts       # Runs the example tests against demo-site/
+├── pek.config.js                   # Optional integration selection (no secrets)
+├── test-fixtures.js                # Auto fixture selector (active grid)
 ├── test-fixtures.d.ts              # Types for test-fixtures.js
 ├── tsconfig.json
 ├── package.json
@@ -85,17 +112,42 @@ cp .env.example .env
 
 ### 4. Run tests locally
 
+No application yet, no account? Try the kit on the bundled demo app:
+
+```bash
+npx playwright install chromium
+npm run test:demo           # starts demo-site/ and runs the example tests
+npm run pek:doctor          # which integrations are active (none yet - that's fine)
+```
+
+Against your application:
+
 ```bash
 npm test                    # All tests (headless)
 npm run test:headed         # With visible browser
 npm run test:ui             # Playwright interactive mode
 npm run test:example        # Example tests only
+npm run test:unit           # Unit tests of the integration layer
 ```
 
 ### 5. View the report
 
 ```bash
 npm run test:report
+npm run pek:publish         # builds run-result.json and feeds every active integration
+```
+
+---
+
+## Integrations
+
+Everything below (Jira/Xray, BrowserStack, Confluence) is **optional**. Selection rules, every provider's variables, CI setup and how to add your own tool are in the operating guide: **[docs/integrations.md](docs/integrations.md)** · **[docs/integrations-fr.md](docs/integrations-fr.md)**.
+
+```bash
+npm run pek:doctor                                   # what is configured / active
+npm run pek:publish -- --scope "Smoke" --dry-run     # what would be published
+PEK_GRID=local npm test                              # force local browsers
+PEK_PUBLISHERS=slack,teams npm run pek:publish       # choose publishers
 ```
 
 ---
@@ -169,7 +221,8 @@ Parameters available when triggering manually:
 
 | Parameter      | Description                           | Examples                    |
 |---------------|---------------------------------------|------------------------------|
-| `issueKey`    | Jira Test Plan key                    | `MYPROJECT-100`             |
+| `issueKey`    | Jira Test Plan key (optional — Xray upload only when set) | `MYPROJECT-100` |
+| `grid`        | Execution grid (`auto` = BrowserStack > LambdaTest > local depending on the secrets) | `auto`, `browserstack`, `lambdatest`, `local` |
 | `os`          | Operating system                      | `Windows`, `Mac`            |
 | `osVersion`   | OS version                            | `11`, `Sequoia`, `Tahoe`    |
 | `browser`     | Browser                               | `chrome`, `firefox`, `safari`, `edge` |
@@ -179,9 +232,9 @@ Parameters available when triggering manually:
 
 ### GitHub Actions secrets to configure
 
-In **Settings > Secrets and variables > Actions**:
+In **Settings > Secrets and variables > Actions** — all optional: without any secret a manual run executes locally (against the demo app when the `BASE_URL` variable is not set) and still publishes the GitHub summary. Secrets for LambdaTest, TestRail, Qase, Zephyr Scale, Slack, Teams and webhooks: see [docs/integrations.md §8](docs/integrations.md#8-github-actions).
 
-**Jira/Xray (required for upload):**
+**Jira/Xray (for upload):**
 ```
 JIRA_URL
 JIRA_USER
@@ -190,7 +243,7 @@ XRAY_CLIENT_ID
 XRAY_CLIENT_SECRET
 ```
 
-**BrowserStack (required for remote tests):**
+**BrowserStack (for BrowserStack runs):**
 ```
 BROWSERSTACK_USERNAME
 BROWSERSTACK_ACCESS_KEY
@@ -330,6 +383,8 @@ The kit ships with an **MCP (Model Context Protocol) server** that exposes the w
 | `pek_get_browserstack_build_link` | Find the Automate dashboard URL for a build |
 | `pek_upload_to_xray` | Create a Jira Test Execution from JUnit results |
 | `pek_update_confluence_report` | Append a row to the Confluence dashboard |
+| `pek_list_integrations` | List the kit integrations and which are active |
+| `pek_publish_results` | Publish the last run to every active integration (TestRail, Slack, Teams…) |
 
 ### Quick start
 
@@ -360,6 +415,7 @@ Design principles: the existing kit scripts remain the **single source of truth*
 4. **`browserstack.config.js`**: change `projectName`
 5. **`.env.example`**: adapt `BASE_URL`, `JIRA_PROJECT_KEY`
 6. **Tests**: replace `tests/example/` with your actual tests
+7. **`pek.config.js`** *(optional)*: pin the integrations you want instead of `auto`
 
 ### Recommendations
 
@@ -368,6 +424,7 @@ Design principles: the existing kit scripts remain the **single source of truth*
 - Use `generateUserData()` for dynamic test data
 - Use `captureEvidence()` for screenshots attached to Xray
 - Never commit `.env` or `.env.browserstack` (already in `.gitignore`)
+- Link tests to your test-management tool: `test_key` (Xray), `C123` in the title or a `testrail_case` annotation (TestRail), `qase_id` (Qase), `PROJ-T12` in the title (Zephyr Scale)
 
 ---
 

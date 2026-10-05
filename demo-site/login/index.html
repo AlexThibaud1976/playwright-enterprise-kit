@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PEK Demo App - Login</title></head>
+<body>
+  <h1>Login</h1>
+  <form action="/login/" method="get" onsubmit="event.preventDefault(); document.getElementById('msg').hidden = false;">
+    <label>Email <input type="email" name="email" id="email"></label>
+    <label>Password <input type="password" name="password" id="password"></label>
+    <button type="submit">Sign in</button>
+  </form>
+  <p id="msg" role="alert" hidden>Invalid credentials (demo app)</p>
+</body>
+</html>

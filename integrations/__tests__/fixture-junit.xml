@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites id="" name="" tests="3" failures="1" skipped="1" errors="0" time="3.5">
+<testsuite name="example/02-login.spec.ts" timestamp="2026-10-05T10:00:00.000Z" hostname="chromium" tests="3" failures="1" skipped="1" time="3.5" errors="0">
+<testcase name="Login C101 user can login" classname="example/02-login.spec.ts" time="1.5">
+<properties>
+<property name="qase_id" value="7">
+</property>
+</properties>
+</testcase>
+<testcase name="Login &amp; logout fails" classname="example/02-login.spec.ts" time="2">
+<failure message="expected &quot;a&quot; to be &quot;b&quot;" type="FAILURE">boom</failure>
+</testcase>
+<testcase name="Skipped one" classname="example/02-login.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>
