@@ -23,6 +23,47 @@ jobs:
       - name: Check TypeScript
         run: npx tsc --noEmit
 
+      - name: Integration unit tests (registry, run-result, providers)
+        run: npm run test:unit
+
+  # Proves the kit works with NO third-party tool (no Jira, Confluence,
+  # BrowserStack...): runs the example tests against the bundled demo app,
+  # then builds run-result.json through the integration pipeline.
+  standalone-smoke:
+    name: Standalone smoke (no integrations)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run example tests against the demo app
+        run: npm run test:demo
+        env:
+          CI: true
+
+      - name: Show integrations (all off)
+        run: npm run pek:doctor
+
+      - name: Publish (no integration configured -> run-result.json only)
+        run: node scripts/pek-publish.js --scope "Standalone smoke" --strict
+        env:
+          PEK_PUBLISHERS: github-summary
+
+      - name: Assert run result
+        run: |
+          node -e "const r=require('./run-result.json'); console.log(r.status, r.stats); if (r.status!=='PASS' || r.stats.total===0) process.exit(1)"
+
   mcp-server-build:
     name: MCP Server Build
     runs-on: ubuntu-latest

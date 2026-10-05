@@ -1,10 +1,10 @@
 # PEK MCP Server — User Guide
 
-> Version: 0.1.0 | Updated: 2026-07-08
+> Version: 0.2.0 | Updated: 2026-10-05
 > Applies to: `mcp-server/` in the Playwright Enterprise Kit repository
 > Version française : [mcp-server-user-guide-fr.md](./mcp-server-user-guide-fr.md)
 
-This guide explains, step by step, how to install, configure, and use the **PEK MCP Server** — the Model Context Protocol server that turns the Playwright Enterprise Kit's CI/CD workflows (Playwright runs, BrowserStack, Jira/Xray, Confluence) into tools an AI assistant can drive in natural language.
+This guide explains, step by step, how to install, configure, and use the **PEK MCP Server** — the Model Context Protocol server that turns the Playwright Enterprise Kit's CI/CD workflows (Playwright runs, BrowserStack, Jira/Xray, Confluence — and since v0.2 any integration of the kit: LambdaTest, TestRail, Qase, Zephyr Scale, Slack, Teams, webhooks, your own plugins) into tools an AI assistant can drive in natural language. The kit itself also works with no integration at all: see [integrations.md](./integrations.md).
 
 ---
 
@@ -33,7 +33,7 @@ Once connected, you can tell your MCP client (Claude Code, Claude Desktop, or an
 
 …and the assistant chains the right tools, using your existing kit scripts under the hood. No terminal, no copy-pasting of `BS_*` variables, no manual Xray upload.
 
-The server exposes **6 tools**, all prefixed `pek_`:
+The server exposes **8 tools**, all prefixed `pek_`:
 
 | Tool | Purpose | Side effects |
 |---|---|---|
@@ -43,6 +43,8 @@ The server exposes **6 tools**, all prefixed `pek_`:
 | `pek_get_browserstack_build_link` | Find the Automate dashboard URL for a build | None (read-only) |
 | `pek_upload_to_xray` | Upload JUnit results to Xray Cloud | **Creates a Jira Test Execution** |
 | `pek_update_confluence_report` | Append a row to the Confluence dashboard | **Modifies a Confluence page** |
+| `pek_list_integrations` *(v0.2)* | List the kit integrations and which are active | None (read-only) |
+| `pek_publish_results` *(v0.2)* | Publish the last run to every active integration (or a subset) | **Writes to each active tool** (none with `dryRun`) |
 
 ---
 
@@ -58,6 +60,8 @@ flowchart LR
     B -- "spawn node" --> E[scripts/update-confluence-report.js]
     B -- "spawn npx" --> F[playwright test]
     B -- "native fetch" --> G[Xray Cloud API<br/>TS port of upload-xray.ps1]
+    B -- "spawn node" --> K[scripts/pek-doctor.js<br/>scripts/pek-publish.js]
+    K --> L[integrations/ registry<br/>grids · test management · publishers]
     C & D --> H[(BrowserStack API)]
     E --> I[(Confluence API)]
     G --> J[(Jira / Xray)]
@@ -85,8 +89,11 @@ mcp-server/
         ├── tests.ts        # pek_run_tests, pek_get_last_run_summary
         ├── browserstack.ts # pek_resolve_browserstack_config, pek_get_browserstack_build_link
         ├── xray.ts         # pek_upload_to_xray
-        └── confluence.ts   # pek_update_confluence_report
+        ├── confluence.ts   # pek_update_confluence_report
+        └── integrations.ts # pek_list_integrations, pek_publish_results (v0.2)
 ```
+
+Since v0.2 the two generic tools wrap `scripts/pek-doctor.js` and `scripts/pek-publish.js`, i.e. the kit's integration registry (`integrations/`): any provider added to the kit — built-in or plugin — is reachable from the MCP server without changing its code.
 
 ---
 
@@ -178,7 +185,7 @@ Verify the connection inside Claude Code:
 /mcp
 ```
 
-You should see `playwright-kit` listed with 6 tools.
+You should see `playwright-kit` listed with 8 tools.
 
 ### 5.2 Claude Desktop
 
@@ -246,6 +253,8 @@ env:     PEK_ROOT=<absolute path to the kit root> + credentials as needed
 | `CONFLUENCE_SPACE_KEY` | idem | Yes for Confluence | — | e.g. `QA` |
 | `CONFLUENCE_PAGE_TITLE` | idem | No | `Test Execution Dashboard` | |
 | `CONFLUENCE_PARENT_PAGE_ID` | idem | No | — | Parent page for auto-created dashboard |
+| `PEK_GRID`, `PEK_TEST_MANAGEMENT`, `PEK_PUBLISHERS`, `PEK_PLUGINS` | all tools (v0.2) | No | `auto` | Integration selection, see [integrations.md](./integrations.md#3-how-providers-are-selected) |
+| `LT_*`, `TESTRAIL_*`, `QASE_*`, `ZEPHYR_*`, `SLACK_*`, `TEAMS_*`, `PEK_WEBHOOK_*`, `PEK_WS_*` | `pek_run_tests`, `pek_publish_results` | For the matching integration | — | Full list in [integrations.md](./integrations.md) and `.env.example` |
 
 ---
 
@@ -273,11 +282,15 @@ flowchart TD
     Q -->|"Publish results"| Q3{"Where to?"}
     Q3 -->|"Jira / Xray"| T5["pek_upload_to_xray ⚠️<br/><i>creates a Test Execution</i>"]
     Q3 -->|"Confluence dashboard"| T6["pek_update_confluence_report ⚠️<br/><i>modifies the page</i>"]
+    Q3 -->|"Any / several tools<br/>(TestRail, Slack...)"| T8["pek_publish_results ⚠️<br/><i>dryRun first if unsure</i>"]
+    Q -->|"What is configured?"| T7["pek_list_integrations<br/><i>(read-only)</i>"]
 
     Q -->|"Find a<br/>BrowserStack build"| T4["pek_get_browserstack_build_link<br/><i>(read-only)</i>"]
 
     style T5 fill:#7f1d1d,color:#fff
     style T6 fill:#7f1d1d,color:#fff
+    style T8 fill:#7f1d1d,color:#fff
+    style T7 fill:#14532d,color:#fff
     style T2 fill:#14532d,color:#fff
     style T4 fill:#14532d,color:#fff
     style T3 fill:#14532d,color:#fff
@@ -300,7 +313,7 @@ Runs `npx playwright test` from the kit root and returns the outcome. Reporters 
 | `project` | string | — | Playwright project name (maps to `--project`) |
 | `config` | string | — | Alternate config, e.g. `"playwright.config.browserstack.js"` |
 | `headed` | boolean | `false` | Visible browser |
-| `extraEnv` | object | — | Extra env vars for the run — typically the `BS_*` block from `pek_resolve_browserstack_config` |
+| `extraEnv` | object | — | Extra env vars for the run — typically the `BS_*` block from `pek_resolve_browserstack_config`, or `PEK_GRID` + non-secret `LT_*` for LambdaTest (whitelisted keys only, never credentials) |
 | `timeoutSeconds` | number | `900` | Hard kill after this delay (30–7200) |
 
 **Returns**
@@ -481,6 +494,57 @@ Appends an execution row to the **Test Execution Dashboard** Confluence page: re
 
 ---
 
+### 7.7 `pek_list_integrations` *(read-only)*
+
+Lists every integration known to the kit — built-in or plugin — and whether it is configured and active. Wraps `scripts/pek-doctor.js --json`.
+
+**Parameters:** none.
+
+**Returns**
+
+```json
+{
+  "selection": { "grid": { "value": "auto", "source": "default" }, "testManagement": { "...": "..." }, "publishers": { "...": "..." } },
+  "providers": [
+    { "kind": "grid", "name": "local", "configured": true, "active": true, "missingEnv": [] },
+    { "kind": "test-management", "name": "testrail", "configured": false, "active": false,
+      "missingEnv": ["TESTRAIL_URL", "TESTRAIL_USER", "TESTRAIL_API_KEY", "TESTRAIL_PROJECT_ID"] }
+  ]
+}
+```
+
+Only variable **names** are returned, never values.
+
+**Prompt example:** *"Which integrations are active, and what is missing to enable TestRail?"*
+
+---
+
+### 7.8 `pek_publish_results` ⚠️ *writes to every active integration*
+
+Builds `run-result.json` from the last run (`test-results.json`, or `xray-report.xml` as a fallback) and sends it to the active test-management tools (Xray, Zephyr Scale, TestRail, Qase, plugins), then to the active publishers (GitHub summary, Confluence, Slack, Teams, webhook, plugins). Wraps `scripts/pek-publish.js --json`. Works with zero integration configured (it then only writes `run-result.json`); a failing provider never blocks the others.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `scope` | string | `All Tests` | Scope label shown everywhere |
+| `testPlanKey` | string | — | Xray Test Plan key, e.g. `"PROJ-100"` |
+| `only` | string[] | — | Restrict to these providers, e.g. `["testrail", "slack"]` |
+| `exclude` | string[] | — | Skip these providers |
+| `links` | record&lt;label, url&gt; | — | Extra links; prefix the label with `grid:` for the grid build link |
+| `dryRun` | boolean | `false` | Build `run-result.json` and list what would be published, no remote call |
+
+**Returns:** `{ status, stats, grid, runResult, links[], results[{ kind, provider, status: ok|skipped|error, message, key, url }] }`
+
+**Prompt examples**
+
+- *"Publish the last run to TestRail and Slack only."*
+- *"Dry-run the publication so I can see what would be sent."*
+
+Full provider configuration: [integrations.md](./integrations.md).
+
+---
+
 ## 8. End-to-end workflows
 
 ### Workflow A — Local run + Xray
@@ -538,6 +602,33 @@ Prompt:
 
 The assistant uses `pek_get_last_run_summary` (timestamps), decides, and only then calls `pek_run_tests` if needed — a good example of why the read-only tools exist.
 
+### Workflow D — No third-party tool at all
+
+> *"Run the example tests against the demo app and show me the result."*
+
+```
+pek_list_integrations                                   # grid local, nothing else active
+pek_run_tests { config: "playwright.config.demo.ts" }   # starts the bundled demo app
+pek_publish_results { scope: "Demo" }                   # run-result.json only
+```
+
+### Workflow E — Another stack: LambdaTest + TestRail + Slack
+
+> *"Run the regression on LambdaTest Edge / Windows 11, push the results to TestRail and notify Slack."*
+
+```
+pek_run_tests { config: "playwright.config.grid.js", grep: "@regression",
+                extraEnv: { PEK_GRID: "lambdatest", LT_PLATFORM: "Windows 11",
+                            LT_BROWSER: "MicrosoftEdge" }, timeoutSeconds: 3600 }
+        ▼
+pek_publish_results { scope: "Regression", only: ["testrail", "slack"] }
+        │  testrail: ok R412 · slack: ok
+        ▼
+"Done — TestRail run R412 created, Slack notified."
+```
+
+`LT_USERNAME` / `LT_ACCESS_KEY`, `TESTRAIL_*` and `SLACK_WEBHOOK_URL` live in the MCP client `env` block.
+
 ---
 
 ## 9. Testing with MCP Inspector
@@ -551,7 +642,7 @@ npm run inspect
 
 This opens a local web UI where you can:
 
-1. See the 6 tools with their JSON schemas and annotations (`readOnlyHint`, etc.)
+1. See the 8 tools with their JSON schemas and annotations (`readOnlyHint`, etc.)
 2. Fill parameters in a form and call each tool
 3. Inspect both the text output and the `structuredContent`
 
@@ -585,19 +676,20 @@ Recommended first calls, in order of increasing risk:
 
 - **Credentials never transit through the model.** They live in the MCP client configuration (or your shell environment), are read by the *server process*, and are injected into child processes / API calls. Tool inputs and outputs never contain them.
 - **`.mcp.json` with real secrets must never be committed.** Prefer shell-exported variables for anything shared; if you keep secrets in the file, add it to `.gitignore`.
-- **Write operations are explicit and labelled.** Only two tools mutate remote systems (`pek_upload_to_xray`, `pek_update_confluence_report`); both are annotated as non-read-only and non-idempotent, so well-behaved MCP clients ask for confirmation before calling them.
+- **Write operations are explicit and labelled.** Only three tools mutate remote systems (`pek_upload_to_xray`, `pek_update_confluence_report`, `pek_publish_results`); all are annotated as non-read-only and non-idempotent, so well-behaved MCP clients ask for confirmation before calling them.
 - **Scoped tokens.** Use an Atlassian API token limited to the target Confluence space, and an Xray key pair scoped to the target project where your instance allows it.
+- **No credentials through `extraEnv`.** The `extraEnv` whitelist only accepts non-secret kit variables (`BS_*`, non-secret `LT_*`, `PEK_GRID`, `BASE_URL`, …); `LT_ACCESS_KEY`, tokens and webhook URLs are rejected.
 - **No arbitrary command execution.** `pek_run_tests` only assembles `npx playwright test` arguments from validated, typed parameters; there is no generic "run shell command" tool.
 
 ---
 
 ## 12. Known limits & roadmap
 
-| Limit (v0.1.0) | Impact | Candidate for |
+| Limit (v0.2.0) | Impact | Candidate for |
 |---|---|---|
 | `pek_run_tests` is synchronous | Very long campaigns block the tool call until `timeoutSeconds` | v0.2 — async pattern: `pek_start_run` → `run_id` + `pek_get_run_status` |
 | Summary parsed from the list reporter's output | Counters depend on the reporter's textual summary; exotic reporter configs could yield zeros (exit code stays reliable) | v0.2 — optional JSON reporter side-channel |
-| `jira-post-execution.ps1` and `add-timestamps-to-xray-report.js` not exposed | Those steps stay CI-only | v0.2 — additional tools if the need shows up |
+| ~~`jira-post-execution.ps1` and `add-timestamps-to-xray-report.js` not exposed~~ | Done in v0.2: `pek_publish_results` with the `xray` provider runs both steps (Node port, no PowerShell) | — |
 | stdio transport only | No remote/multi-client access | v0.3 — optional streamable HTTP mode |
 
 ---

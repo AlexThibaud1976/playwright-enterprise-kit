@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolveGrid } from './integrations';
 
 /**
  * Playwright Enterprise Kit - Main configuration
@@ -8,7 +9,15 @@ import { defineConfig, devices } from '@playwright/test';
  *   HEADLESS       - Headless mode (true/false, default: true in CI)
  *   TEST_TIMEOUT   - Global test timeout in ms (default: 60000)
  *   CI             - Automatically detected by GitHub Actions
+ *   PEK_GRID       - Execution grid (auto | local | remote | ...), see docs/integrations.md
+ *   PEK_WS_ENDPOINT - Remote Playwright server (grid 'remote'), e.g. ws://grid:3000/
  */
+
+// Grid 'remote' uses Playwright's native connectOptions: every project below
+// then runs its browser on the remote server instead of this machine.
+const grid = resolveGrid();
+const connectOptions = grid.connectOptions ? grid.connectOptions(process.env) : undefined;
+
 export default defineConfig({
   testDir: './tests',
 
@@ -37,6 +46,8 @@ export default defineConfig({
       // test_key entries for tests not yet in Jira are stripped before upload
       // by scripts/remove-test-keys.js (called from upload-xray.ps1).
     }],
+    // Tool-agnostic machine-readable results, consumed by scripts/pek-publish.js
+    ['json', { outputFile: 'test-results.json' }],
     // GitHub Actions visual summary (auto-enabled in CI)
     ...(process.env.GITHUB_ACTIONS
       ? [['@estruyf/github-actions-reporter', {
@@ -62,6 +73,9 @@ export default defineConfig({
 
     /* Headless mode */
     headless: process.env.HEADLESS !== 'false',
+
+    /* Remote Playwright server (grid 'remote' only) */
+    ...(connectOptions ? { connectOptions } : {}),
   },
 
   /* Timeouts */

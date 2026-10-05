@@ -5,17 +5,19 @@ import { registerTestTools } from "./tools/tests.js";
 import { registerBrowserStackTools } from "./tools/browserstack.js";
 import { registerXrayTools } from "./tools/xray.js";
 import { registerConfluenceTools } from "./tools/confluence.js";
+import { registerIntegrationTools } from "./tools/integrations.js";
 import { PEK_ROOT } from "./constants.js";
 
 const server = new McpServer({
   name: "pek-mcp-server",
-  version: "0.1.2",
+  version: "0.2.0",
 });
 
 registerTestTools(server);
 registerBrowserStackTools(server);
 registerXrayTools(server);
 registerConfluenceTools(server);
+registerIntegrationTools(server);
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();

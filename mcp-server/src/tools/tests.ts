@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runCommand } from "../services/exec.js";
-import { DEFAULT_RUN_TIMEOUT_S, PEK_ROOT, filterExtraEnv, truncate } from "../constants.js";
+import { ALLOWED_EXTRA_ENV_HINT, DEFAULT_RUN_TIMEOUT_S, PEK_ROOT, filterExtraEnv, truncate } from "../constants.js";
 
 interface RunSummary {
   passed: number;
@@ -35,15 +35,17 @@ export function registerTestTools(server: McpServer): void {
       title: "Run Playwright tests",
       description: `Runs the kit's Playwright test suite ('npx playwright test' from the repo root) and returns the exit code, a pass/fail summary and the tail of the output.
 
-Reporters defined in playwright.config are intentionally NOT overridden, so artefacts such as xray-report.xml (JUnit for Xray) and the HTML report are still produced and can be uploaded afterwards with pek_upload_to_xray.
+Reporters defined in playwright.config are intentionally NOT overridden, so artefacts such as xray-report.xml (JUnit), test-results.json and the HTML report are still produced and can be published afterwards with pek_publish_results (any integration) or pek_upload_to_xray.
+
+Works with no third-party tool at all: without credentials the tests run on local browsers (grid "local"). Call pek_list_integrations to see which grid is active.
 
 Args:
   - grep (string, optional): only run tests whose title matches this pattern (--grep)
   - testPath (string, optional): file or directory to run, relative to the repo root (e.g. "tests/example/")
   - project (string, optional): Playwright project name (--project)
-  - config (string, optional): alternate config file, e.g. "playwright.config.browserstack.js"
+  - config (string, optional): alternate config file, e.g. "playwright.config.browserstack.js" (BrowserStack), "playwright.config.grid.js" (LambdaTest / other cloud grids) or "playwright.config.demo.ts" (bundled demo app, no third party needed)
   - headed (boolean, default false): run with a visible browser
-  - extraEnv (record<string,string>, optional): extra environment variables. Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and BROWSERSTACK_BUILD_NAME are accepted (e.g. BS_* values from pek_resolve_browserstack_config)
+  - extraEnv (record<string,string>, optional): extra environment variables. Only non-secret kit variables are accepted: BS_*, LT_PLATFORM/LT_BROWSER/LT_BROWSER_VERSION/LT_BUILD_NAME/LT_PROJECT_NAME, PEK_GRID (local | browserstack | lambdatest | remote), PEK_GRID_WORKERS, PEK_TEST_SCOPE, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT, BROWSERSTACK_BUILD_NAME (e.g. BS_* values from pek_resolve_browserstack_config)
   - timeoutSeconds (number, default ${DEFAULT_RUN_TIMEOUT_S}): kill the run after this delay
 
 Returns: { exitCode, passed, failed, flaky, skipped, durationMs, timedOut, outputTail }
@@ -82,9 +84,7 @@ Note: BrowserStack runs can be long; raise timeoutSeconds for large campaigns.`,
             {
               type: "text",
               text:
-                `Rejected extraEnv keys: ${rejected.join(", ")}. ` +
-                "Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and " +
-                "BROWSERSTACK_BUILD_NAME are allowed.",
+                `Rejected extraEnv keys: ${rejected.join(", ")}. ${ALLOWED_EXTRA_ENV_HINT}`,
             },
           ],
           isError: true,
@@ -150,7 +150,7 @@ Note: BrowserStack runs can be long; raise timeoutSeconds for large campaigns.`,
       title: "Get last run artefacts",
       description: `Inspects the repo for artefacts of the most recent Playwright run, without executing anything.
 
-Checks for: xray-report.xml (JUnit for Xray), playwright-report/ (HTML report) and test-results/ (traces, screenshots), with their modification times.
+Checks for: xray-report.xml (JUnit), test-results.json (Playwright JSON), run-result.json (last pek_publish_results output), playwright-report/ (HTML report) and test-results/ (traces, screenshots), with their modification times.
 
 Returns: { artefacts: [{ name, path, exists, modifiedAt, sizeBytes }] }
 
@@ -164,7 +164,13 @@ Use it before pek_upload_to_xray to confirm the JUnit report is fresh.`,
       },
     },
     async () => {
-      const candidates = ["xray-report.xml", "playwright-report", "test-results"];
+      const candidates = [
+        "xray-report.xml",
+        "test-results.json",
+        "run-result.json",
+        "playwright-report",
+        "test-results",
+      ];
       const artefacts = candidates.map((name) => {
         const fullPath = path.join(PEK_ROOT, name);
         try {

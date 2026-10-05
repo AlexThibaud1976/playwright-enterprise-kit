@@ -26,7 +26,18 @@ export const DEFAULT_XRAY_ENDPOINT = "xray.cloud.getxray.app";
  * NODE_OPTIONS, PATH or similar and turn a test run into arbitrary code
  * execution. Only kit-relevant variables are allowed through.
  */
-export const ALLOWED_EXTRA_ENV = /^(BS_[A-Z0-9_]+|DEVICE_NAME|BASE_URL|HEADLESS|TEST_TIMEOUT|BROWSERSTACK_BUILD_NAME)$/;
+export const ALLOWED_EXTRA_ENV =
+  /^(BS_[A-Z0-9_]+|LT_(PLATFORM|BROWSER|BROWSER_VERSION|BUILD_NAME|PROJECT_NAME)|PEK_GRID|PEK_GRID_WORKERS|PEK_TEST_SCOPE|DEVICE_NAME|BASE_URL|HEADLESS|TEST_TIMEOUT|BROWSERSTACK_BUILD_NAME)$/;
+
+/**
+ * Human-readable version of ALLOWED_EXTRA_ENV for error messages.
+ * Credentials (BROWSERSTACK_*, LT_USERNAME, LT_ACCESS_KEY, tokens...) are never
+ * accepted: they must come from the MCP client config, not from the model.
+ */
+export const ALLOWED_EXTRA_ENV_HINT =
+  "Only BS_*, LT_PLATFORM/LT_BROWSER/LT_BROWSER_VERSION/LT_BUILD_NAME/LT_PROJECT_NAME, " +
+  "PEK_GRID, PEK_GRID_WORKERS, PEK_TEST_SCOPE, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT " +
+  "and BROWSERSTACK_BUILD_NAME are allowed.";
 
 export function filterExtraEnv(extraEnv: Record<string, string> | undefined): {
   env: Record<string, string>;

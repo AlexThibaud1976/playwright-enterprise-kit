@@ -1,7 +1,7 @@
 {
   "name": "playwright-enterprise-kit",
   "version": "1.0.0",
-  "description": "Framework Playwright enterprise-ready : Jira/Xray, BrowserStack, Confluence, GitHub Actions",
+  "description": "Framework Playwright enterprise-ready, modulaire : fonctionne seul ou connecté à Jira/Xray, BrowserStack, Confluence, LambdaTest, TestRail, Qase, Zephyr Scale, Slack, Teams, webhooks…",
   "private": true,
   "scripts": {
     "test": "npx playwright test",
@@ -10,7 +10,13 @@
     "test:debug": "npx playwright test --debug",
     "test:report": "npx playwright show-report",
     "test:browserstack": "npx playwright test --config=playwright.config.browserstack.js",
-    "test:example": "npx playwright test tests/example/"
+    "test:example": "npx playwright test tests/example/",
+    "test:grid": "npx playwright test --config=playwright.config.grid.js",
+    "test:demo": "npx playwright test --config=playwright.config.demo.ts",
+    "test:unit": "node --test \"integrations/__tests__/*.test.js\"",
+    "demo:serve": "node scripts/demo-server.js",
+    "pek:doctor": "node scripts/pek-doctor.js",
+    "pek:publish": "node scripts/pek-publish.js"
   },
   "keywords": [
     "playwright",
@@ -22,7 +28,15 @@
     "browserstack",
     "enterprise",
     "framework",
-    "template"
+    "template",
+    "lambdatest",
+    "testrail",
+    "qase",
+    "zephyr",
+    "slack",
+    "teams",
+    "webhook",
+    "mcp"
   ],
   "author": "Alexandre Thibaud",
   "license": "MIT",

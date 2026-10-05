@@ -1,0 +1,341 @@
+{
+  "config": {
+    "argv": [
+      "/opt/node22/bin/node",
+      "/repo/node_modules/.bin/playwright",
+      "test",
+      "--config=pw.local-verify.config.ts"
+    ],
+    "configFile": "/repo/pw.local-verify.config.ts",
+    "rootDir": "/repo/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/repo/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/repo/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "/repo/node_modules/@xray-app/playwright-junit-reporter/dist/index.js",
+        {
+          "outputFile": "xray-report.xml",
+          "embedAnnotationsAsProperties": true,
+          "embedTestrunAnnotationsAsItemProperties": true,
+          "embedAttachmentsAsProperty": "testrun_evidence",
+          "textContentAnnotations": [
+            "test_description",
+            "testrun_comment"
+          ]
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 2,
+    "webServer": {
+      "command": "node scripts/demo-server.js",
+      "url": "http://localhost:4173",
+      "reuseExistingServer": true,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "example/01-sanity.spec.ts",
+      "file": "example/01-sanity.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sanity - Framework health check",
+          "file": "example/01-sanity.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Homepage loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1588,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Page title: PEK Demo App\n"
+                        },
+                        {
+                          "text": "[evidence] homepage-loaded -> test_homepage_loaded_1791213470217.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-05T15:17:46.741Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "homepage-loaded",
+                          "contentType": "image/png",
+                          "path": "/repo/test-results/example-01-sanity-Sanity---cbbcc-Homepage-loads-successfully-chromium/attachments/homepage-loaded-34b16db75fd3c76b1ad1850718cea75385c1ead9.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7aac49015cb0e1b95ff3-39c10bbe9ead85b183d2",
+              "file": "example/01-sanity.spec.ts",
+              "line": 17,
+              "column": 7
+            },
+            {
+              "title": "Page responds within timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 564,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Page load time: 60ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-05T15:17:50.796Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7aac49015cb0e1b95ff3-b6d09843b5eccafc89f9",
+              "file": "example/01-sanity.spec.ts",
+              "line": 34,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "example/02-login.spec.ts",
+      "file": "example/02-login.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Login",
+          "file": "example/02-login.spec.ts",
+          "line": 49,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Login page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1573,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[evidence] login-page -> test_login_page_1791213470103.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-05T15:17:46.776Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "login-page",
+                          "contentType": "image/png",
+                          "path": "/repo/test-results/example-02-login-Login-Login-page-renders-correctly-chromium/attachments/login-page-cd2260d8476d7d32f322d2cd9d82b180e289f373.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37a4be344ffb62952ae9-dbbe03c69fd141f9ca90",
+              "file": "example/02-login.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "Login with valid credentials",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 952,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[evidence] after-login -> test_after_login_1791213471482.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-05T15:17:50.767Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "after-login",
+                          "contentType": "image/png",
+                          "path": "/repo/test-results/example-02-login-Login-Login-with-valid-credentials-chromium/attachments/after-login-689b1f7f62652a6831f216ee1fcffb7b4b1d94b4.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37a4be344ffb62952ae9-8248812cbfcf3a17ca60",
+              "file": "example/02-login.spec.ts",
+              "line": 72,
+              "column": 7
+            },
+            {
+              "title": "Login with invalid credentials shows error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 861,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-05T15:17:51.754Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37a4be344ffb62952ae9-a423e89397f15e11bb4a",
+              "file": "example/02-login.spec.ts",
+              "line": 90,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-05T15:17:46.003Z",
+    "duration": 6815.557,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -36,8 +36,9 @@ if (fs.existsSync(evidenceDir)) {
   const files = fs.readdirSync(evidenceDir);
   for (const file of files) {
     if (file.endsWith('.png')) {
-      // Format: DEMO-XX_description_timestamp.png
-      const match = file.match(/^(DEMO-\d+)_(.+)_\d+\.png$/);
+      // Format: <JIRA-KEY>_description_timestamp.png (written by captureEvidence)
+      // Any Jira project key is accepted (e.g. PROJ-42, MY_APP-7).
+      const match = file.match(/^([A-Z][A-Z0-9_]*-\d+)_(.+)_\d+\.png$/);
       if (match) {
         const testKey = match[1];
         if (!evidenceByTestKey[testKey]) {

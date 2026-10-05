@@ -4,20 +4,36 @@ name: Playwright Tests
 # Playwright Enterprise Kit - Workflow GitHub Actions
 #
 # Déclencheurs :
-#   - workflow_dispatch : exécution manuelle avec paramètres (BrowserStack)
+#   - workflow_dispatch : exécution manuelle avec paramètres. La grille
+#                         d'exécution est au choix : auto (BrowserStack si ses
+#                         secrets existent, sinon LambdaTest, sinon local),
+#                         browserstack, lambdatest ou local.
 #   - push/PR sur main  : exécution locale (chromium headless)
+#
+# ✅  AUCUNE intégration n'est obligatoire : sans aucun secret, le run manuel
+#     s'exécute en local et publie un résumé dans l'onglet Summary. Chaque
+#     intégration (Xray, Confluence, TestRail, Slack...) s'active dès que ses
+#     secrets sont présents. Mode opératoire complet : docs/integrations-fr.md
 #
 # ⚠️  Le job test-local ne s'exécute que si la variable de repo BASE_URL est
 #     définie (Settings > Secrets and variables > Actions > Variables).
 #     Sans cible réelle à tester, le job est skippé — un template cloné sans
 #     configuration reste ainsi au vert. Skipped = succès pour les checks requis.
 #
-# Secrets requis (Settings > Secrets and variables > Actions) :
-#   Jira/Xray :
+# Secrets (Settings > Secrets and variables > Actions) - tous optionnels :
+#   Jira/Xray (upload si issueKey renseigné) :
 #     JIRA_URL, JIRA_USER, JIRA_API_TOKEN
 #     XRAY_CLIENT_ID, XRAY_CLIENT_SECRET
 #   BrowserStack :
 #     BROWSERSTACK_USERNAME, BROWSERSTACK_ACCESS_KEY
+#   LambdaTest :
+#     LT_USERNAME, LT_ACCESS_KEY
+#   Autres outils de gestion de tests (via scripts/pek-publish.js) :
+#     TESTRAIL_URL, TESTRAIL_USER, TESTRAIL_API_KEY   (+ variable TESTRAIL_PROJECT_ID)
+#     QASE_API_TOKEN                                  (+ variable QASE_PROJECT_CODE)
+#     ZEPHYR_API_TOKEN                                (+ variable ZEPHYR_PROJECT_KEY)
+#   Notifications (via scripts/pek-publish.js) :
+#     SLACK_WEBHOOK_URL, TEAMS_WEBHOOK_URL, PEK_WEBHOOK_URL, PEK_WEBHOOK_TOKEN, PEK_WEBHOOK_SECRET
 #   Confluence (optionnel) :
 #     CONFLUENCE_URL, CONFLUENCE_USER, CONFLUENCE_API_TOKEN
 #     CONFLUENCE_SPACE_KEY, CONFLUENCE_PAGE_TITLE, CONFLUENCE_PARENT_PAGE_ID
@@ -25,6 +41,12 @@ name: Playwright Tests
 #     JIRA_CUSTOM_FIELD_OS, JIRA_CUSTOM_FIELD_OS_VERSION
 #     JIRA_CUSTOM_FIELD_BROWSER, JIRA_CUSTOM_FIELD_BROWSER_VERSION
 #     JIRA_CUSTOM_FIELD_TEST_SCOPE
+#
+# Variables de repo optionnelles (Settings > Secrets and variables > Actions > Variables) :
+#   BASE_URL               URL de l'application testée
+#   PEK_TEST_MANAGEMENT    ex: "testrail" ou "none" (défaut : auto = selon les secrets)
+#   PEK_PUBLISHERS         ex: "slack,github-summary" (défaut : auto)
+#   PEK_PUBLISH_ON_PUSH    "true" pour publier aussi les runs push/PR (défaut : résumé GitHub seul)
 # ──────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -36,8 +58,19 @@ on:
   workflow_dispatch:
     inputs:
       issueKey:
-        description: "Jira Test Plan Key (ex: PROJ-100)"
-        required: true
+        description: "Jira Test Plan Key (ex: PROJ-100) - optionnel, Xray uniquement"
+        required: false
+        default: ""
+      grid:
+        description: "Grille d'exécution (auto = BrowserStack > LambdaTest > local selon les secrets)"
+        required: false
+        type: choice
+        default: auto
+        options:
+          - auto
+          - browserstack
+          - lambdatest
+          - local
       os:
         description: "Système d'exploitation"
         required: true
@@ -126,6 +159,35 @@ jobs:
           BASE_URL: ${{ vars.BASE_URL }}
           CI: true
 
+      # By default push/PR runs only get the GitHub job summary. Set the repo
+      # variable PEK_PUBLISH_ON_PUSH=true to also feed TestRail, Slack, etc.
+      - name: Publish results
+        if: always()
+        shell: bash
+        env:
+          PEK_TEST_MANAGEMENT: ${{ vars.PEK_PUBLISH_ON_PUSH == 'true' && (vars.PEK_TEST_MANAGEMENT || 'auto') || 'none' }}
+          PEK_PUBLISHERS: ${{ vars.PEK_PUBLISH_ON_PUSH == 'true' && (vars.PEK_PUBLISHERS || 'auto') || 'github-summary' }}
+          DEVICE_NAME: local-chromium
+          TESTRAIL_URL: ${{ secrets.TESTRAIL_URL }}
+          TESTRAIL_USER: ${{ secrets.TESTRAIL_USER }}
+          TESTRAIL_API_KEY: ${{ secrets.TESTRAIL_API_KEY }}
+          TESTRAIL_PROJECT_ID: ${{ vars.TESTRAIL_PROJECT_ID }}
+          TESTRAIL_SUITE_ID: ${{ vars.TESTRAIL_SUITE_ID }}
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+          QASE_PROJECT_CODE: ${{ vars.QASE_PROJECT_CODE }}
+          ZEPHYR_API_TOKEN: ${{ secrets.ZEPHYR_API_TOKEN }}
+          ZEPHYR_PROJECT_KEY: ${{ vars.ZEPHYR_PROJECT_KEY }}
+          ZEPHYR_BASE_URL: ${{ vars.ZEPHYR_BASE_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_NOTIFY_ON: ${{ vars.SLACK_NOTIFY_ON }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_NOTIFY_ON: ${{ vars.TEAMS_NOTIFY_ON }}
+          PEK_WEBHOOK_URL: ${{ secrets.PEK_WEBHOOK_URL }}
+          PEK_WEBHOOK_TOKEN: ${{ secrets.PEK_WEBHOOK_TOKEN }}
+          PEK_WEBHOOK_SECRET: ${{ secrets.PEK_WEBHOOK_SECRET }}
+        # Xray / Confluence stay reserved to the manual dispatch job
+        run: node scripts/pek-publish.js --scope "Push / PR (chromium)" --exclude xray,confluence
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: always()
@@ -135,9 +197,14 @@ jobs:
           retention-days: 14
 
   # ============================================================================
-  # BrowserStack - Exécution manuelle avec paramètres
+  # Exécution manuelle avec paramètres (BrowserStack, LambdaTest ou local)
+  #
+  # L'identifiant du job est conservé (test-browserstack) pour ne casser aucune
+  # référence existante ; avec grid=browserstack le déroulé est identique à
+  # l'historique.
   # ============================================================================
   test-browserstack:
+    name: Tests (manual dispatch)
     if: ${{ github.event_name == 'workflow_dispatch' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
@@ -151,7 +218,57 @@ jobs:
         with:
           node-version: 24
 
+      # ──────────────────────────────────────────────────────────────────────
+      # Quelles intégrations pour ce run ? (aucune n'est obligatoire)
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Resolve integrations
+        id: providers
+        shell: bash
+        env:
+          INPUT_GRID: ${{ github.event.inputs.grid }}
+          INPUT_ISSUE_KEY: ${{ github.event.inputs.issueKey }}
+          INPUT_CONFLUENCE: ${{ github.event.inputs.confluenceReport }}
+          # Booleans only - secret values never reach this script
+          HAS_BS: ${{ secrets.BROWSERSTACK_USERNAME != '' && secrets.BROWSERSTACK_ACCESS_KEY != '' }}
+          HAS_LT: ${{ secrets.LT_USERNAME != '' && secrets.LT_ACCESS_KEY != '' }}
+          HAS_XRAY: ${{ secrets.XRAY_CLIENT_ID != '' && secrets.XRAY_CLIENT_SECRET != '' }}
+          HAS_CONFLUENCE: ${{ secrets.CONFLUENCE_URL != '' && secrets.CONFLUENCE_API_TOKEN != '' }}
+        run: |
+          GRID="${INPUT_GRID:-auto}"
+          if [ "$GRID" = "auto" ]; then
+            if [ "$HAS_BS" = "true" ]; then GRID=browserstack
+            elif [ "$HAS_LT" = "true" ]; then GRID=lambdatest
+            else GRID=local; fi
+          fi
+          case "$GRID" in
+            browserstack) [ "$HAS_BS" = "true" ] || { echo "::error::grid=browserstack but BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY secrets are missing"; exit 1; } ;;
+            lambdatest)   [ "$HAS_LT" = "true" ] || { echo "::error::grid=lambdatest but LT_USERNAME / LT_ACCESS_KEY secrets are missing"; exit 1; } ;;
+            local) ;;
+            *) echo "::error::Unknown grid '$GRID'"; exit 1 ;;
+          esac
+
+          XRAY=false
+          if [ -n "$INPUT_ISSUE_KEY" ]; then
+            if [ "$HAS_XRAY" = "true" ]; then XRAY=true
+            else echo "::warning::issueKey provided but XRAY_CLIENT_ID / XRAY_CLIENT_SECRET secrets are missing - Xray upload skipped"; fi
+          fi
+
+          CONFLUENCE=false
+          if [ "$INPUT_CONFLUENCE" = "true" ]; then
+            if [ "$HAS_CONFLUENCE" = "true" ]; then CONFLUENCE=true
+            else echo "::warning::confluenceReport=true but CONFLUENCE_* secrets are missing - Confluence report skipped"; fi
+          fi
+
+          echo "Grid: $GRID | Xray: $XRAY | Confluence: $CONFLUENCE"
+          {
+            echo "grid=$GRID"
+            echo "xray=$XRAY"
+            echo "confluence=$CONFLUENCE"
+          } >> "$GITHUB_OUTPUT"
+          echo "PEK_GRID=$GRID" >> "$GITHUB_ENV"
+
       - name: Validate & resolve BrowserStack configuration
+        if: ${{ steps.providers.outputs.grid == 'browserstack' }}
         shell: bash
         # Inputs passed through env (never interpolated into the script body):
         # ${{ }} expressions are substituted BEFORE the shell parses the script,
@@ -172,11 +289,56 @@ jobs:
             --browser "$INPUT_BROWSER" \
             --browserVersion "$INPUT_BROWSER_VERSION"
 
+      # Same inputs, translated to LambdaTest capabilities
+      - name: Resolve LambdaTest configuration
+        if: ${{ steps.providers.outputs.grid == 'lambdatest' }}
+        shell: bash
+        env:
+          INPUT_OS: ${{ github.event.inputs.os }}
+          INPUT_OS_VERSION: ${{ github.event.inputs.osVersion }}
+          INPUT_BROWSER: ${{ github.event.inputs.browser }}
+          INPUT_BROWSER_VERSION: ${{ github.event.inputs.browserVersion }}
+        run: |
+          case "$INPUT_OS" in
+            Mac) PLATFORM="macOS $INPUT_OS_VERSION" ;;
+            *)   PLATFORM="Windows $INPUT_OS_VERSION" ;;
+          esac
+          case "$INPUT_BROWSER" in
+            chrome)   LT_B=Chrome ;;
+            edge)     LT_B=MicrosoftEdge ;;
+            firefox)  LT_B=pw-firefox ;;
+            safari)   LT_B=pw-webkit ;;
+            chromium) LT_B=pw-chromium ;;
+            *) echo "::error::Unsupported browser '$INPUT_BROWSER'"; exit 1 ;;
+          esac
+          DEVICE=$(echo "lt-${INPUT_OS}-${INPUT_OS_VERSION}-${INPUT_BROWSER}-${INPUT_BROWSER_VERSION}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9.\n-' '-')
+          {
+            echo "LT_PLATFORM=$PLATFORM"
+            echo "LT_BROWSER=$LT_B"
+            echo "LT_BROWSER_VERSION=$INPUT_BROWSER_VERSION"
+            echo "DEVICE_NAME=$DEVICE"
+          } >> "$GITHUB_ENV"
+          echo "LambdaTest: $PLATFORM / $LT_B $INPUT_BROWSER_VERSION"
+
+      - name: Resolve local configuration
+        if: ${{ steps.providers.outputs.grid == 'local' }}
+        shell: bash
+        run: echo "DEVICE_NAME=local-chromium" >> "$GITHUB_ENV"
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright (chromium driver for BrowserStack)
-        run: npx playwright install chromium
+      - name: Install Playwright (chromium)
+        shell: bash
+        env:
+          GRID: ${{ steps.providers.outputs.grid }}
+        run: |
+          # Remote grids only need the client driver; local runs need the browser + OS deps
+          if [ "$GRID" = "local" ]; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install chromium
+          fi
 
       # ──────────────────────────────────────────────────────────────────────
       # Determine test pattern from scope
@@ -221,6 +383,7 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       - name: Run tests on BrowserStack
         id: run-tests
+        if: ${{ steps.providers.outputs.grid == 'browserstack' }}
         run: npx playwright test "$TEST_PATTERN" --config=playwright.config.browserstack.js
         env:
           TEST_PATTERN: ${{ steps.test-pattern.outputs.pattern }}
@@ -232,11 +395,43 @@ jobs:
           CI: true
         continue-on-error: true
 
+      - name: Run tests on LambdaTest
+        id: run-tests-lt
+        if: ${{ steps.providers.outputs.grid == 'lambdatest' }}
+        run: npx playwright test "$TEST_PATTERN" --config=playwright.config.grid.js
+        env:
+          TEST_PATTERN: ${{ steps.test-pattern.outputs.pattern }}
+          LT_USERNAME: ${{ secrets.LT_USERNAME }}
+          LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+          LT_BUILD_NAME: "GitHub Actions #${{ github.run_number }} - ${{ github.ref_name }} - ${{ env.DEVICE_NAME }} - ${{ steps.test-pattern.outputs.description }}"
+          BASE_URL: ${{ vars.BASE_URL || 'http://localhost:3000' }}
+          CI: true
+        continue-on-error: true
+
+      # Without a BASE_URL repo variable, the bundled demo app is served and
+      # tested, so a freshly cloned template gives a meaningful green run.
+      - name: Run tests locally (no remote grid)
+        id: run-tests-local
+        if: ${{ steps.providers.outputs.grid == 'local' }}
+        shell: bash
+        run: |
+          if [ -n "$BASE_URL" ]; then
+            npx playwright test "$TEST_PATTERN" --project=chromium
+          else
+            echo "::notice::BASE_URL repo variable not set - running against the bundled demo app (demo-site/)"
+            npx playwright test "$TEST_PATTERN" --config=playwright.config.demo.ts
+          fi
+        env:
+          TEST_PATTERN: ${{ steps.test-pattern.outputs.pattern }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          CI: true
+        continue-on-error: true
+
       # ──────────────────────────────────────────────────────────────────────
       # Post-exécution
       # ──────────────────────────────────────────────────────────────────────
       - name: Fetch BrowserStack build link
-        if: always()
+        if: ${{ always() && steps.providers.outputs.grid == 'browserstack' }}
         id: bs-link
         shell: bash
         env:
@@ -246,7 +441,7 @@ jobs:
         run: node scripts/get-browserstack-build-link.js
 
       - name: Add timestamps to Xray report
-        if: always()
+        if: ${{ always() && hashFiles('xray-report.xml') != '' }}
         run: node scripts/add-timestamps-to-xray-report.js xray-report.xml
 
       - name: Upload test artifacts
@@ -257,13 +452,14 @@ jobs:
           path: |
             playwright-report/
             xray-report.xml
+            test-results.json
           retention-days: 30
 
       # ──────────────────────────────────────────────────────────────────────
       # Upload vers Xray (crée une Test Execution dans Jira)
       # ──────────────────────────────────────────────────────────────────────
       - name: Upload results to Xray
-        if: always()
+        if: ${{ always() && steps.providers.outputs.xray == 'true' }}
         id: xray-upload
         shell: pwsh
         env:
@@ -339,7 +535,7 @@ jobs:
       # Rapport Confluence (optionnel, toggle via confluenceReport)
       # ──────────────────────────────────────────────────────────────────────
       - name: Update Confluence Report
-        if: ${{ always() && github.event.inputs.confluenceReport == 'true' }}
+        if: ${{ always() && steps.providers.outputs.confluence == 'true' }}
         shell: bash
         env:
           CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
@@ -364,6 +560,54 @@ jobs:
             --browserstack-url "$BS_BUILD_URL"
 
       # ──────────────────────────────────────────────────────────────────────
+      # Autres intégrations (TestRail, Qase, Zephyr Scale, Slack, Teams,
+      # webhook, résumé GitHub...) - chacune s'active si ses secrets existent.
+      # Xray, Jira et Confluence sont gérés par les étapes dédiées ci-dessus.
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Publish to other integrations
+        if: always()
+        id: pek-publish
+        shell: bash
+        env:
+          PEK_TEST_MANAGEMENT: ${{ vars.PEK_TEST_MANAGEMENT }}
+          PEK_PUBLISHERS: ${{ vars.PEK_PUBLISHERS }}
+          TEST_SCOPE: ${{ steps.test-pattern.outputs.description }}
+          EXEC_KEY: ${{ steps.xray-upload.outputs.exec_key }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          BS_BUILD_URL: ${{ steps.bs-link.outputs.build_url }}
+          TESTRAIL_URL: ${{ secrets.TESTRAIL_URL }}
+          TESTRAIL_USER: ${{ secrets.TESTRAIL_USER }}
+          TESTRAIL_API_KEY: ${{ secrets.TESTRAIL_API_KEY }}
+          TESTRAIL_PROJECT_ID: ${{ vars.TESTRAIL_PROJECT_ID }}
+          TESTRAIL_SUITE_ID: ${{ vars.TESTRAIL_SUITE_ID }}
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+          QASE_PROJECT_CODE: ${{ vars.QASE_PROJECT_CODE }}
+          ZEPHYR_API_TOKEN: ${{ secrets.ZEPHYR_API_TOKEN }}
+          ZEPHYR_PROJECT_KEY: ${{ vars.ZEPHYR_PROJECT_KEY }}
+          ZEPHYR_BASE_URL: ${{ vars.ZEPHYR_BASE_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_NOTIFY_ON: ${{ vars.SLACK_NOTIFY_ON }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_NOTIFY_ON: ${{ vars.TEAMS_NOTIFY_ON }}
+          PEK_WEBHOOK_URL: ${{ secrets.PEK_WEBHOOK_URL }}
+          PEK_WEBHOOK_TOKEN: ${{ secrets.PEK_WEBHOOK_TOKEN }}
+          PEK_WEBHOOK_SECRET: ${{ secrets.PEK_WEBHOOK_SECRET }}
+        run: |
+          ARGS=(--scope "$TEST_SCOPE" --exclude xray,confluence)
+          if [ -n "$BS_BUILD_URL" ]; then ARGS+=(--link "grid:BrowserStack build=$BS_BUILD_URL"); fi
+          if [ -n "$EXEC_KEY" ] && [ -n "$JIRA_URL" ]; then ARGS+=(--link "Xray $EXEC_KEY=$JIRA_URL/browse/$EXEC_KEY"); fi
+          node scripts/pek-publish.js "${ARGS[@]}"
+
+      - name: Upload run result
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: run-result-${{ env.DEVICE_NAME || 'run' }}
+          path: run-result.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # ──────────────────────────────────────────────────────────────────────
       # Fail le job si des tests ont échoué
       # ──────────────────────────────────────────────────────────────────────
       - name: Check test results
@@ -371,8 +615,10 @@ jobs:
         shell: bash
         env:
           RUN_OUTCOME: ${{ steps.run-tests.outcome }}
+          RUN_OUTCOME_LT: ${{ steps.run-tests-lt.outcome }}
+          RUN_OUTCOME_LOCAL: ${{ steps.run-tests-local.outcome }}
         run: |
-          if [ "$RUN_OUTCOME" == "failure" ]; then
+          if [ "$RUN_OUTCOME" == "failure" ] || [ "$RUN_OUTCOME_LT" == "failure" ] || [ "$RUN_OUTCOME_LOCAL" == "failure" ]; then
             echo "Tests failed"
             exit 1
           fi

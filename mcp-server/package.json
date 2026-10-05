@@ -1,7 +1,7 @@
 {
   "name": "pek-mcp-server",
-  "version": "0.1.2",
-  "description": "MCP server exposing the Playwright Enterprise Kit workflows (Playwright runs, BrowserStack, Xray, Confluence) as tools for MCP clients such as Claude Code / Claude Desktop.",
+  "version": "0.2.0",
+  "description": "MCP server exposing the Playwright Enterprise Kit workflows (Playwright runs, execution grids, test management tools and publishers: BrowserStack, LambdaTest, Xray, Zephyr Scale, TestRail, Qase, Confluence, Slack, Teams, webhooks) as tools for MCP clients such as Claude Code / Claude Desktop.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -19,7 +19,11 @@
     "playwright",
     "xray",
     "browserstack",
-    "confluence"
+    "confluence",
+    "testrail",
+    "qase",
+    "slack",
+    "teams"
   ],
   "license": "MIT",
   "dependencies": {

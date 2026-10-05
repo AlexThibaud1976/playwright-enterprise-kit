@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runCommand } from "../services/exec.js";
-import { filterExtraEnv, truncate } from "../constants.js";
+import { ALLOWED_EXTRA_ENV_HINT, filterExtraEnv, truncate } from "../constants.js";
 
 export function registerConfluenceTools(server: McpServer): void {
   server.registerTool(
@@ -51,9 +51,7 @@ Modifies a Confluence page on every call (adds a new history row).`,
             {
               type: "text",
               text:
-                `Rejected extraEnv keys: ${rejected.join(", ")}. ` +
-                "Only BS_*, DEVICE_NAME, BASE_URL, HEADLESS, TEST_TIMEOUT and " +
-                "BROWSERSTACK_BUILD_NAME are allowed.",
+                `Rejected extraEnv keys: ${rejected.join(", ")}. ${ALLOWED_EXTRA_ENV_HINT}`,
             },
           ],
           isError: true,
