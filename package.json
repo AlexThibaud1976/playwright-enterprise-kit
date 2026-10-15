@@ -41,11 +41,11 @@
   "author": "Alexandre Thibaud",
   "license": "MIT",
   "devDependencies": {
-    "@estruyf/github-actions-reporter": "^1.12.0",
-    "@playwright/test": "^1.63.0",
-    "@types/node": "^24.0.0",
+    "@estruyf/github-actions-reporter": "^1.13.0",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
     "@xray-app/playwright-junit-reporter": "^0.14.0",
-    "browserstack-local": "^1.5.15",
+    "browserstack-local": "^1.5.16",
     "playwright": "^1.63.0",
     "typescript": "^7.0.2"
   },
