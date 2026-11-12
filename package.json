@@ -41,8 +41,8 @@
   "author": "Alexandre Thibaud",
   "license": "MIT",
   "devDependencies": {
-    "@estruyf/github-actions-reporter": "^1.13.0",
-    "@playwright/test": "^1.64.1",
+    "@estruyf/github-actions-reporter": "^1.14.0",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.19.2",
     "@xray-app/playwright-junit-reporter": "^0.16.0",
     "browserstack-local": "^1.5.16",
